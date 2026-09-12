@@ -81,16 +81,16 @@ HoltPage {
         }
 
         Meta {
-            visible: !!preset
+            visible: !!addDialog.preset
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
-            text: preset ? preset.description + (preset.cloudflare ? " Needs a Cloudflare solver (built in when Chromium is on the server, or a FlareSolverr/Byparr URL in Settings)." : "") : ""
+            text: addDialog.preset ? addDialog.preset.description + (addDialog.preset.cloudflare ? " Needs a Cloudflare solver (built in when Chromium is on the server, or a FlareSolverr/Byparr URL in Settings)." : "") : ""
         }
 
         Field { label: "Name"; HoltTextField { id: nameField } }
         Field {
             label: "URL"
-            visible: !preset || preset.fields.indexOf("url") !== -1
+            visible: !addDialog.preset || addDialog.preset.fields.indexOf("url") !== -1
             HoltTextField {
                 id: urlField
                 placeholderText: "https://indexer.example/api"
@@ -98,7 +98,7 @@ HoltPage {
         }
         Field {
             label: "API key"
-            visible: !preset || preset.fields.indexOf("api_key") !== -1
+            visible: !addDialog.preset || addDialog.preset.fields.indexOf("api_key") !== -1
             HoltTextField {
                 id: apiKeyField
                 echoMode: TextInput.Password
@@ -110,9 +110,9 @@ HoltPage {
             HoltButton { kind: "quiet"; text: "Cancel"; onClicked: addDialog.close() },
             HoltButton {
                 kind: "primary"; text: "Add"
-                enabled: nameField.text.length > 0 && urlField.text.length > 0 && (!preset || !preset.needs_api_key || apiKeyField.text.length > 0)
+                enabled: nameField.text.length > 0 && urlField.text.length > 0 && (!addDialog.preset || !addDialog.preset.needs_api_key || apiKeyField.text.length > 0)
                 onClicked: {
-                    indexerModel.addIndexer(preset ? preset.slug : "", nameField.text, urlField.text, apiKeyField.text);
+                    indexerModel.addIndexer(addDialog.preset ? addDialog.preset.slug : "", nameField.text, urlField.text, apiKeyField.text);
                     nameField.text = "";
                     urlField.text = "";
                     apiKeyField.text = "";
