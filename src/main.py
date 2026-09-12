@@ -58,11 +58,15 @@ def main() -> None:
     if not os.environ.get("QT_QUICK_CONTROLS_STYLE"):
         QQuickStyle.setStyle("org.kde.desktop")
     app = QGuiApplication(sys.argv)
+    # First thing after construction: on Wayland KWin derives the window's app_id from this
+    # (matching the-den-client.desktop and its icon), and it must be set before any window exists.
+    app.setDesktopFileName("the-den-client")
     app.setApplicationName("The Den")
     app.setOrganizationName("the-den")
-    app.setDesktopFileName("the-den-client")
-    # Installed builds have the icon in the hicolor theme, a checkout has it in assets/.
-    logo = Path(__file__).resolve().parents[1] / "assets" / "logo.svg"
+    # Theme icon (hicolor, installed by the package) with the bundled file as fallback;
+    # Qt 6.8+ / KWin 6.2+ also pass a file icon via xdg-toplevel-icon. The file lives inside
+    # src/ because the HoltOS updater installs only src/.
+    logo = Path(__file__).resolve().parent / "assets" / "logo.svg"
     icon = QIcon.fromTheme("the-den-client", QIcon(str(logo))) if logo.exists() else QIcon.fromTheme("the-den-client")
     app.setWindowIcon(icon)
 

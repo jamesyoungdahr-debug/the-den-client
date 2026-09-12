@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" width="72" alt="The Den">
+  <img src="src/assets/logo.svg" width="72" alt="The Den">
 </p>
 <h1 align="center">The Den Client</h1>
 <p align="center"><code>PART OF HOLTOS</code></p>

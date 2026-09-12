@@ -5,7 +5,7 @@
 catalog (`IndexerListModel.presets` / `loadPresets()` / `addIndexer(preset, name, url,
 apiKey)`; the dialog shows only the fields a preset needs and flags Cloudflare ones), and
 Settings gained the external FlareSolverr/Byparr URL. The app icon is set from the hicolor
-theme so installed builds show it (a checkout falls back to `assets/logo.svg`). Model test
+theme so installed builds show it (a checkout falls back to `src/assets/logo.svg`). Model test
 re-verified against the dev backend; the QML awaits the real-desktop pass.
 
 **0.4.3 (2026-09-12):** Movies and TV read the merged library from the-den's

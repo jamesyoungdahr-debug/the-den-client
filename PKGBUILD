@@ -16,15 +16,12 @@ package() {
     local app_dir="$pkgdir/opt/the-den-client"
     install -dm755 "$app_dir"
     cp -r "$startdir/src" "$app_dir/"
-    # the window-icon fallback and any other bundled art
-    cp -r "$startdir/assets" "$app_dir/"
-
     # src/holt_tokens.py is a copy of the-den's design/exports/holt_tokens.py (regenerate there, copy here).
     install -Dm644 "$startdir/src/holt_tokens.py" "$app_dir/src/holt_tokens.py"
 
     install -Dm755 "$startdir/deploy/the-den-client" "$pkgdir/usr/bin/the-den-client"
     install -Dm644 "$startdir/deploy/the-den-client.desktop" "$pkgdir/usr/share/applications/the-den-client.desktop"
-    install -Dm644 "$startdir/assets/logo.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/the-den-client.svg"
-    install -Dm644 "$startdir/assets/logo.svg" "$pkgdir/usr/share/icons/hicolor/64x64/apps/the-den-client.svg"
-    install -Dm644 "$startdir/assets/logo.svg" "$pkgdir/usr/share/pixmaps/the-den-client.svg"
+    install -Dm644 "$startdir/src/assets/logo.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/the-den-client.svg"
+    install -Dm644 "$startdir/src/assets/logo.svg" "$pkgdir/usr/share/icons/hicolor/64x64/apps/the-den-client.svg"
+    install -Dm644 "$startdir/src/assets/logo.svg" "$pkgdir/usr/share/pixmaps/the-den-client.svg"
 }
