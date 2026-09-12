@@ -10,6 +10,7 @@ HoltPage {
     objectName: "seriesPage"
     title: "TV"
     padding: Theme.space4
+    property string filter: "all"
 
     Component.onCompleted: {
         seriesModel.refresh()
@@ -31,7 +32,14 @@ HoltPage {
         width: page.width - 2 * page.padding
         spacing: Theme.space3
 
-        PageHeader { title: "TV"; meta: seriesModel.count + " series in the library" }
+
+        PageHeader {
+            title: "TV"
+            meta: (seriesModel.count - seriesModel.plexCount) + " series in The Den" + (seriesModel.plexCount ? " · " + seriesModel.plexCount + " on Plex" : "")
+            Chip { text: "All"; on: page.filter === "all"; onClicked: page.filter = "all" }
+            Chip { text: "Incomplete"; on: page.filter === "missing"; onClicked: page.filter = "missing" }
+            Chip { visible: seriesModel.plexCount > 0; text: "On Plex"; on: page.filter === "plex"; onClicked: page.filter = "plex" }
+        }
         StatusBanner { id: banner }
 
         Flow {
@@ -40,14 +48,19 @@ HoltPage {
             Repeater {
                 model: seriesModel
                 delegate: PosterCard {
+                    visible: page.filter === "all" || (page.filter === "plex" && model.onPlex) || (page.filter === "missing" && !model.available)
                     posterWidth: Theme.posterLg
                     title: model.title
                     year: model.year
                     posterPath: model.posterPath
-                    status: ""
+                    status: model.seriesId === 0 ? "available" : (model.total && model.have === model.total ? "available" : (model.have ? "partial" : (model.onPlex ? "available" : "wanted")))
                     showRating: false
-                    onClicked: Controls.ApplicationWindow.window.push("EpisodesPage.qml", { seriesId: model.seriesId, seriesTitle: model.title, posterPath: model.posterPath })
-                    HoltButton { visible: apiClient.isAdmin; anchors { right: parent.right; rightMargin: 6 } y: Math.round(parent.posterWidth * 1.5) - height - 6; small: true; kind: "quiet"; text: "✕"; onClicked: seriesModel.deleteSeries(model.seriesId) }
+                    onClicked: {
+                        if (model.seriesId > 0) Controls.ApplicationWindow.window.push("EpisodesPage.qml", { seriesId: model.seriesId, seriesTitle: model.title, posterPath: model.posterPath })
+                        else if (model.tmdbId) Controls.ApplicationWindow.window.openDetail("tv", model.tmdbId)
+                    }
+                    Badge { visible: model.onPlex; anchors { left: parent.left; leftMargin: 8 } y: Math.round(parent.posterWidth * 1.5) - height - 8; solid: true; tone: "available"; label: model.seriesId === 0 ? "Plex · " + model.plexSeasons + (model.plexSeasons === 1 ? " season" : " seasons") : "Plex" }
+                    HoltButton { visible: apiClient.isAdmin && model.seriesId > 0; anchors { right: parent.right; rightMargin: 6 } y: Math.round(parent.posterWidth * 1.5) - height - 6; small: true; kind: "quiet"; text: "✕"; onClicked: seriesModel.deleteSeries(model.seriesId) }
                 }
             }
         }

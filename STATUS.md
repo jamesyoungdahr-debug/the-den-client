@@ -1,6 +1,12 @@
 # Status
 
 ## Last completed
+**0.4.3 (2026-09-12):** Movies and TV read the merged library from the-den's
+`/api/library/movies|series` (needs the-den 0.4.3), so titles that are only on Plex show
+up with their Plex poster (the thumb proxy URL gets `?api_key=` because QML `Image` can't
+send headers), a *Plex* badge, an *On Plex* filter, and no Releases/Remove actions. The
+sidebar scrolls when the window is shorter than the nav.
+
 **U4 -- the HoltOS Glass redesign of the whole client (2026-09-12).** Everything was
 rebuilt on the backend's current API:
 

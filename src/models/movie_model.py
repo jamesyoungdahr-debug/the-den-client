@@ -1,21 +1,49 @@
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Property, QUrl, Signal, Slot
 
 from models.base import JsonListModel
 
 
-class MovieListModel(JsonListModel):
-    """The movie library -- GET/POST/DELETE /movies."""
+def plex_poster(api, item: dict) -> dict:
+    """Plex-only entries carry a poster path on The Den's own thumb proxy. QML's Image can't
+    send the API token as a header, so make it an absolute URL with the token as a query
+    parameter (the proxy accepts that form for exactly this reason)."""
+    path = item.get("poster_path") or ""
+    if path.startswith("/api/plex/thumb/"):
+        token = api.apiToken
+        item = {**item, "poster_path": f"{api.baseUrl}{path}" + (f"?api_key={token}" if token else "")}
+    return item
 
-    PATH = "/movies"
+
+class MovieListModel(JsonListModel):
+    """The movie library as people see it: The Den's rows merged with what the Plex scan
+    found -- GET /api/library/movies. `source` is den | plex | both; Plex-only entries
+    have movieId 0 and can't be searched or removed here."""
+
+    PATH = "/api/library/movies"
     FIELDS = [
-        ("movieId", "id"),
-        ("tmdbId", "tmdb_id"),
+        ("movieId", "id", 0),
+        ("tmdbId", "tmdb_id", 0),
         ("title", "title"),
         ("year", "year"),
-        ("overview", "overview", ""),
         ("posterPath", "poster_path", ""),
         ("hasFile", "has_file", False),
+        ("downloading", "downloading", False),
+        ("onPlex", "on_plex", False),
+        ("source", "source", "den"),
+        ("available", "available", False),
     ]
+
+    statsChanged = Signal()
+    plexCount = Property(int, lambda self: sum(1 for m in self._items if m.get("on_plex")), notify=statsChanged)
+    denCount = Property(int, lambda self: sum(1 for m in self._items if m.get("id")), notify=statsChanged)
+
+    def _set_items(self, items: list[dict]) -> None:
+        super()._set_items(items)
+        self.statsChanged.emit()
+
+    @Slot()
+    def refresh(self) -> None:
+        self._fetch(self.PATH, transform=lambda items: [plex_poster(self.api, i) for i in items])
 
     @Slot(int, str, str, str, str)
     def addMovie(self, tmdbId: int, title: str, year: str, overview: str, posterPath: str) -> None:
@@ -24,7 +52,7 @@ class MovieListModel(JsonListModel):
             payload["year"] = int(year)
         if overview:
             payload["overview"] = overview
-        if posterPath:
+        if posterPath and "/api/plex/thumb/" not in posterPath:
             payload["poster_path"] = posterPath
         self._write("POST", "/movies", payload)
 
@@ -46,7 +74,6 @@ class MovieSearchResultsModel(JsonListModel):
 
     @Slot(str)
     def search(self, query: str) -> None:
-        from PySide6.QtCore import QUrl
         if not query.strip():
             self._set_items([])
             return

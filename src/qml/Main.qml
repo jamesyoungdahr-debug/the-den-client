@@ -123,84 +123,95 @@ Controls.ApplicationWindow {
             color: Theme.glassSurfaceStrong
             Rectangle { anchors { right: parent.right; top: parent.top; bottom: parent.bottom } width: 1; color: Theme.glassBorder }
 
-            ColumnLayout {
+            // Scrolls when the window is shorter than the nav (Admin group + account row were being cut off).
+            Flickable {
+                id: sideFlick
                 anchors { fill: parent; margins: 12 }
-                spacing: 4
+                contentHeight: sideCol.height
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded; width: 4 }
+                ColumnLayout {
+                    id: sideCol
+                    width: sideFlick.width
+                    height: Math.max(implicitHeight, sideFlick.height)
+                    spacing: 4
 
-                // lockup
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.bottomMargin: Theme.space3
-                    spacing: 10
-                    RingMark { markSize: 26 }
-                    Text { visible: !root.railMode; text: "The Den"; font.family: Theme.fontCore; font.weight: Font.Black; font.pixelSize: Theme.sizeWordmark; font.letterSpacing: -0.6; color: Theme.ink; Layout.fillWidth: true }
-                    HoltButton { visible: !root.compact; kind: "quiet"; small: true; text: root.sidebarCollapsed ? "»" : "«"; onClicked: root.sidebarCollapsed = !root.sidebarCollapsed }
-                }
-
-                Repeater {
-                    model: root.navGroups
-                    delegate: ColumnLayout {
-                        id: group
-                        required property var modelData
-                        visible: !modelData.admin || apiClient.isAdmin
+                    // lockup
+                    RowLayout {
                         Layout.fillWidth: true
-                        spacing: 2
-                        Eyebrow { visible: !root.railMode; text: group.modelData.name; accent: false; Layout.topMargin: Theme.space2; Layout.leftMargin: 10; Layout.bottomMargin: 4 }
-                        Rectangle { visible: root.railMode; Layout.fillWidth: true; Layout.topMargin: 6; Layout.bottomMargin: 6; height: 1; color: Theme.glassBorder }
-                        Repeater {
-                            model: group.modelData.items
-                            delegate: Rectangle {
-                                id: navItem
-                                required property var modelData
-                                readonly property bool active: root.activeNav === modelData.key
-                                Layout.fillWidth: true
-                                height: 38
-                                radius: Theme.radiusMd
-                                color: active ? Theme.currentTint : (navMouse.containsMouse ? Theme.glassHighlight : "transparent")
-                                Rectangle { visible: navItem.active; width: 2; height: 18; radius: 1; color: Theme.current; anchors { left: parent.left; verticalCenter: parent.verticalCenter } }
-                                RowLayout {
-                                    anchors { fill: parent; leftMargin: 12; rightMargin: 10 }
-                                    spacing: 10
-                                    Text { text: navItem.modelData.icon; font.pixelSize: 15; color: navItem.active ? Theme.current : Theme.ink55; Layout.preferredWidth: 18; horizontalAlignment: Text.AlignHCenter }
-                                    Text { visible: !root.railMode; text: navItem.modelData.label; font.family: Theme.fontCore; font.pixelSize: 14; font.weight: Font.Bold; color: navItem.active ? Theme.ink : Theme.ink70; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Rectangle {
-                                        visible: navItem.modelData.key === "requests" && apiClient.isAdmin && requestsModel.pendingCount > 0
-                                        width: pendingText.implicitWidth + 10; height: 18; radius: 9; color: Theme.current
-                                        Text { id: pendingText; anchors.centerIn: parent; text: requestsModel.pendingCount; font.family: Theme.fontMono; font.pixelSize: 10; color: Theme.deep }
+                        Layout.bottomMargin: Theme.space3
+                        spacing: 10
+                        RingMark { markSize: 26 }
+                        Text { visible: !root.railMode; text: "The Den"; font.family: Theme.fontCore; font.weight: Font.Black; font.pixelSize: Theme.sizeWordmark; font.letterSpacing: -0.6; color: Theme.ink; Layout.fillWidth: true }
+                        HoltButton { visible: !root.compact; kind: "quiet"; small: true; text: root.sidebarCollapsed ? "»" : "«"; onClicked: root.sidebarCollapsed = !root.sidebarCollapsed }
+                    }
+
+                    Repeater {
+                        model: root.navGroups
+                        delegate: ColumnLayout {
+                            id: group
+                            required property var modelData
+                            visible: !modelData.admin || apiClient.isAdmin
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Eyebrow { visible: !root.railMode; text: group.modelData.name; accent: false; Layout.topMargin: Theme.space2; Layout.leftMargin: 10; Layout.bottomMargin: 4 }
+                            Rectangle { visible: root.railMode; Layout.fillWidth: true; Layout.topMargin: 6; Layout.bottomMargin: 6; height: 1; color: Theme.glassBorder }
+                            Repeater {
+                                model: group.modelData.items
+                                delegate: Rectangle {
+                                    id: navItem
+                                    required property var modelData
+                                    readonly property bool active: root.activeNav === modelData.key
+                                    Layout.fillWidth: true
+                                    height: 38
+                                    radius: Theme.radiusMd
+                                    color: active ? Theme.currentTint : (navMouse.containsMouse ? Theme.glassHighlight : "transparent")
+                                    Rectangle { visible: navItem.active; width: 2; height: 18; radius: 1; color: Theme.current; anchors { left: parent.left; verticalCenter: parent.verticalCenter } }
+                                    RowLayout {
+                                        anchors { fill: parent; leftMargin: 12; rightMargin: 10 }
+                                        spacing: 10
+                                        Text { text: navItem.modelData.icon; font.pixelSize: 15; color: navItem.active ? Theme.current : Theme.ink55; Layout.preferredWidth: 18; horizontalAlignment: Text.AlignHCenter }
+                                        Text { visible: !root.railMode; text: navItem.modelData.label; font.family: Theme.fontCore; font.pixelSize: 14; font.weight: Font.Bold; color: navItem.active ? Theme.ink : Theme.ink70; Layout.fillWidth: true; elide: Text.ElideRight }
+                                        Rectangle {
+                                            visible: navItem.modelData.key === "requests" && apiClient.isAdmin && requestsModel.pendingCount > 0
+                                            width: pendingText.implicitWidth + 10; height: 18; radius: 9; color: Theme.current
+                                            Text { id: pendingText; anchors.centerIn: parent; text: requestsModel.pendingCount; font.family: Theme.fontMono; font.pixelSize: 10; color: Theme.deep }
+                                        }
                                     }
+                                    MouseArea { id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.navigate(navItem.modelData.key) }
+                                    Controls.ToolTip.visible: root.railMode && navMouse.containsMouse
+                                    Controls.ToolTip.text: navItem.modelData.label
                                 }
-                                MouseArea { id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.navigate(navItem.modelData.key) }
-                                Controls.ToolTip.visible: root.railMode && navMouse.containsMouse
-                                Controls.ToolTip.text: navItem.modelData.label
                             }
                         }
                     }
-                }
 
-                Item { Layout.fillHeight: true }
+                    Item { Layout.fillHeight: true }
 
-                // account
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 48
-                    radius: Theme.radiusMd
-                    color: accountMouse.containsMouse ? Theme.glassHighlight : "transparent"
-                    RowLayout {
-                        anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
-                        spacing: 10
-                        Avatar { initial: apiClient.signedIn ? apiClient.userInitial : "•" }
-                        ColumnLayout {
-                            visible: !root.railMode
-                            spacing: 0
-                            Layout.fillWidth: true
-                            Text { text: apiClient.signedIn ? apiClient.username : "anonymous"; font.family: Theme.fontCore; font.pixelSize: 13; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
-                            Meta { text: (apiClient.isAdmin ? "admin" : "user") + " · " + (apiClient.signedIn ? "sign out" : "sign in") }
+                    // account
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 48
+                        radius: Theme.radiusMd
+                        color: accountMouse.containsMouse ? Theme.glassHighlight : "transparent"
+                        RowLayout {
+                            anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
+                            spacing: 10
+                            Avatar { initial: apiClient.signedIn ? apiClient.userInitial : "•" }
+                            ColumnLayout {
+                                visible: !root.railMode
+                                spacing: 0
+                                Layout.fillWidth: true
+                                Text { text: apiClient.signedIn ? apiClient.username : "anonymous"; font.family: Theme.fontCore; font.pixelSize: 13; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
+                                Meta { text: (apiClient.isAdmin ? "admin" : "user") + " · " + (apiClient.signedIn ? "sign out" : "sign in") }
+                            }
                         }
-                    }
-                    MouseArea {
-                        id: accountMouse
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: apiClient.signedIn ? apiClient.logout() : stack.replace(null, Qt.resolvedUrl("LoginPage.qml"))
+                        MouseArea {
+                            id: accountMouse
+                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: apiClient.signedIn ? apiClient.logout() : stack.replace(null, Qt.resolvedUrl("LoginPage.qml"))
+                        }
                     }
                 }
             }

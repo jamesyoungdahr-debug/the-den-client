@@ -36,10 +36,11 @@ HoltPage {
 
         PageHeader {
             title: "Movies"
-            meta: movieModel.count + " in the library"
+            meta: movieModel.denCount + " in The Den" + (movieModel.plexCount ? " · " + movieModel.plexCount + " on Plex" : "")
             Chip { text: "All"; on: page.filter === "all"; onClicked: page.filter = "all" }
             Chip { text: "Wanted"; on: page.filter === "missing"; onClicked: page.filter = "missing" }
             Chip { text: "Have"; on: page.filter === "have"; onClicked: page.filter = "have" }
+            Chip { visible: movieModel.plexCount > 0; text: "On Plex"; on: page.filter === "plex"; onClicked: page.filter = "plex" }
         }
 
         StatusBanner { id: banner }
@@ -50,22 +51,23 @@ HoltPage {
             Repeater {
                 model: movieModel
                 delegate: PosterCard {
-                    visible: page.filter === "all" || (page.filter === "have") === model.hasFile
+                    visible: page.filter === "all" || (page.filter === "plex" && model.onPlex) || (page.filter === "have" && model.available) || (page.filter === "missing" && !model.available)
                     posterWidth: Theme.posterLg
                     title: model.title
                     year: model.year
                     posterPath: model.posterPath
-                    status: model.hasFile ? "available" : "wanted"
+                    status: model.downloading ? "processing" : (model.available ? "available" : "wanted")
                     showRating: false
-                    onClicked: Controls.ApplicationWindow.window.openDetail("movie", model.tmdbId)
+                    onClicked: if (model.tmdbId) Controls.ApplicationWindow.window.openDetail("movie", model.tmdbId)
+                    Badge { visible: model.onPlex; anchors { left: parent.left; leftMargin: 8 } y: Math.round(parent.posterWidth * 1.5) - height - 8; solid: true; tone: "available"; label: "Plex" }
 
                     Row {
                         // bottom-right of the poster, clear of the status badge
                         anchors { right: parent.right; rightMargin: 6 }
                         y: Math.round(parent.posterWidth * 1.5) - height - 6
                         spacing: 4
-                        HoltButton { visible: !model.hasFile; small: true; text: "Releases"; onClicked: Controls.ApplicationWindow.window.push("CandidatesPage.qml", { itemId: model.movieId, heading: model.title }) }
-                        HoltButton { visible: apiClient.isAdmin; small: true; kind: "quiet"; text: "✕"; onClicked: movieModel.deleteMovie(model.movieId) }
+                        HoltButton { visible: model.movieId > 0 && !model.hasFile; small: true; text: "Releases"; onClicked: Controls.ApplicationWindow.window.push("CandidatesPage.qml", { itemId: model.movieId, heading: model.title }) }
+                        HoltButton { visible: apiClient.isAdmin && model.movieId > 0; small: true; kind: "quiet"; text: "✕"; onClicked: movieModel.deleteMovie(model.movieId) }
                     }
                 }
             }
