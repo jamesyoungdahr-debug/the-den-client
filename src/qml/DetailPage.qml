@@ -125,7 +125,7 @@ HoltPage {
                                 return "Nothing to request"
                             }
                         }
-                        HoltButton { visible: page.ready && page.kind === "tv" && page.item.library; small: true; text: "Episodes"; onClicked: Controls.ApplicationWindow.window.push("EpisodesPage.qml", { seriesId: page.item.library.id, seriesTitle: page.item.title }) }
+                        HoltButton { visible: page.ready && page.kind === "tv" && !!page.item.library; small: true; text: "Episodes"; onClicked: Controls.ApplicationWindow.window.push("EpisodesPage.qml", { seriesId: page.item.library.id, seriesTitle: page.item.title }) }
                         HoltButton { visible: page.ready && page.item.trailer_key; kind: "quiet"; small: true; text: "Trailer ↗"; onClicked: Qt.openUrlExternally("https://www.youtube.com/watch?v=" + page.item.trailer_key) }
                     }
                 }
