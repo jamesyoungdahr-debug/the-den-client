@@ -2,8 +2,8 @@
 
 The values come straight from design/exports/holt_tokens.py, which design/build_tokens.py
 generates from design/tokens.json -- the same source the web UI's holt-tokens.css and the
-Android HoltTokens.kt come from, so the three never drift. When running from the repo the
-file is found at ../../design/exports/; the Arch package copies it next to this module.
+Android HoltTokens.kt come from, so the three never drift. src/holt_tokens.py is a committed
+copy of that export (regenerate in the-den, copy here); a the-den checkout next door works too.
 
 Colours are Qt-style '#AARRGGBB' strings (alpha FIRST); tests/check_theme_colors.py guards
 that the exported values still parse to the RGBA the design system means."""

@@ -8,13 +8,11 @@ A native KDE desktop app (Qt6 + QML + Kirigami) for [The Den](../README.md) — 
 its JSON API instead of using a browser. See [ROADMAP.md](ROADMAP.md) for how it's being
 built and [STATUS.md](STATUS.md) for what's done/next right now.
 
-Since 2026-09-12 the client lives in the main repo under `client/` (merged from the old
-`the-den-client` repo with its history) and **ships inside the `the-den` Arch package**:
-`makepkg -si` from the repo root installs the server to `/opt/the-den` and the client to
-`/opt/the-den/client`, with `/usr/bin/the-den-client` and an app-menu entry, so the
-HoltOS updater only has to follow one package. Server and client share the HoltOS design
-tokens in [`../design/`](../design/). Commands below are run from this `client/`
-directory.
+The client is its own repo and its own Arch package: `makepkg -si` from this repo root
+installs it to `/opt/the-den-client`, with `/usr/bin/the-den-client` and an app-menu
+entry. The HoltOS updater follows this repo and the-den's separately. The design tokens
+in `src/holt_tokens.py` are a committed copy of the-den's generated
+`design/exports/holt_tokens.py` -- regenerate there, copy here.
 
 ## Running it for development
 Needs the system PySide6 (the pip wheel bundles its own Qt, which can't load the distro's
@@ -54,7 +52,7 @@ anonymous connection is an admin and everything works without an account.
   candidates, indexers, calendar, torrents, settings, Discover rails/search/detail,
   requests).
 - `src/theme.py` -- the HoltOS Glass tokens as the QML `Theme` context property, read
-  from `../design/exports/holt_tokens.py` (the package copies it in).
+  from `src/holt_tokens.py`, a committed copy of the-den's generated `design/exports/holt_tokens.py`.
 - `src/qml/holt/` -- the component library: `GlassPanel`, `Ground`, `Badge`,
   `PosterCard`, `Rail`, `HoltRow`, `HoltButton`, `HoltTextField`, `Field`, `Chip`,
   `HoltDialog`, `StatusBanner`, `EmptyState`, `Skeleton`, `PageHeader`, `ProgressBar`,
