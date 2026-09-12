@@ -8,3 +8,4 @@ Icon=the-den-client
 Categories=AudioVideo;Network;Qt;KDE;
 Terminal=false
 StartupNotify=true
+StartupWMClass=The Den
