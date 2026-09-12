@@ -16,7 +16,7 @@ HoltPage {
     readonly property var rails: [trendingRail, recommendedRail, popularMoviesRail, upcomingMoviesRail, popularTvRail, onTheAirRail]
     property var hero: null
 
-    Component.onCompleted: { for (var i = 0; i < rails.length; i++) rails[i].refresh() }
+    Component.onCompleted: { healthModel.refresh(); for (var i = 0; i < rails.length; i++) rails[i].refresh() }
 
     Connections {
         target: trendingRail
@@ -93,6 +93,34 @@ HoltPage {
             spacing: Theme.space5
 
             StatusBanner { id: banner; sticky: true }
+
+            GlassPanel {
+                id: healthPanel
+                visible: healthModel.count > 0
+                Layout.fillWidth: true
+                strong: true
+                padding: Theme.space3
+                ColumnLayout {
+                    spacing: Theme.space2
+                    Eyebrow { text: healthModel.count === 1 ? "1 thing needs attention" : healthModel.count + " things need attention" }
+                    Repeater {
+                        model: healthModel.checks
+                        delegate: RowLayout {
+                            required property var modelData
+                            spacing: Theme.space2
+                            Badge { tone: modelData.level === "error" ? "error" : "pending"; label: modelData.level }
+                            Text {
+                                text: modelData.message
+                                font.family: Theme.fontCore
+                                font.pixelSize: 13
+                                color: Theme.ink
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+                }
+            }
 
             Rail { title: "Recommended for you"; subtitle: "based on what you added recently"; model: recommendedRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
             Rail { title: "Trending"; subtitle: "movies and series this week"; model: trendingRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }

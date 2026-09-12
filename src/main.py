@@ -12,6 +12,7 @@ from models.calendar_model import CalendarEpisodesModel, CalendarMoviesModel
 from models.candidates_model import CandidatesModel
 from models.discover_model import DetailController, DiscoverSearchModel, RailModel
 from models.episodes_model import EpisodesModel
+from models.health_model import HealthModel
 from models.indexer_model import IndexerListModel
 from models.notifications_model import NotificationAgentsModel
 from models.movie_model import MovieListModel, MovieSearchResultsModel
@@ -31,6 +32,7 @@ def build_context(api: ApiClient) -> dict:
         "apiClient": api,
         "Theme": Theme(),
         "indexerModel": IndexerListModel(api),
+        "healthModel": HealthModel(api),
         "notificationsModel": NotificationAgentsModel(api),
         "movieModel": MovieListModel(api),
         "movieSearchModel": MovieSearchResultsModel(api),

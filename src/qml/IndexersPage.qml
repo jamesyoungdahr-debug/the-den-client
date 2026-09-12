@@ -13,6 +13,7 @@ HoltPage {
 
     Component.onCompleted: {
         indexerModel.loadPresets()
+        indexerModel.loadStats()
         indexerModel.refresh()
         Controls.ApplicationWindow.window.pageAction = { text: "Add indexer", trigger: function () { addDialog.open() } }
     }
@@ -43,10 +44,12 @@ HoltPage {
                 required property var model
                 thumbWidth: 0
                 readonly property var result: page.testResults[model.indexerId]
+                readonly property var stat: indexerModel.stats[String(model.indexerId)] || null
                 Text { text: model.name; font.family: Theme.fontCore; font.pixelSize: 14; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
                 Meta { text: (model.implementation || model.protocol) + " · " + model.url; Layout.fillWidth: true }
                 actions: [
                     Badge { tone: result ? (result.ok ? "available" : "error") : (model.indexerEnabled ? "pending" : "missing"); label: result ? (result.ok ? "reachable" : "failed") : (model.indexerEnabled ? "enabled" : "disabled") },
+                    HoltButton { kind: "quiet"; small: true; text: model.indexerEnabled ? "Disable" : "Enable"; onClicked: indexerModel.setEnabled(model.indexerId, !model.indexerEnabled) },
                     HoltButton { small: true; text: "Test"; onClicked: indexerModel.testIndexer(model.indexerId) },
                     HoltButton { kind: "quiet"; small: true; text: "Delete"; onClicked: indexerModel.deleteIndexer(model.indexerId) }
                 ]

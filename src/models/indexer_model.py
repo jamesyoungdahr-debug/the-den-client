@@ -23,6 +23,7 @@ class IndexerListModel(JsonListModel):
     def __init__(self, api, parent=None):
         super().__init__(api, parent)
         self._presets: list[dict] = []
+        self._stats: dict = {}
 
     presets = Property("QVariantList", lambda self: self._presets, notify=presetsChanged)
 
@@ -36,6 +37,25 @@ class IndexerListModel(JsonListModel):
                 self.errorOccurred.emit(self.api.error_message(status, body))
 
         self.api.request("GET", "/indexers/presets", on_done=on_done)
+
+    statsChanged = Signal()
+    stats = Property("QVariantMap", lambda self: self._stats, notify=statsChanged)
+
+    @Slot()
+    def loadStats(self) -> None:
+        def on_done(status: int, body) -> None:
+            if status == 200 and isinstance(body, list):
+                self._stats = {str(row["indexer_id"]): row for row in body}
+                self.statsChanged.emit()
+            else:
+                self.errorOccurred.emit(self.api.error_message(status, body))
+
+        self.api.request("GET", "/indexers/stats", on_done=on_done)
+
+    @Slot(int, bool)
+    def setEnabled(self, indexerId: int, enabled: bool) -> None:
+        payload = {"enabled": enabled}
+        self._write("PATCH", f"/indexers/{indexerId}", payload)
 
     @Slot(str, str, str, str)
     def addIndexer(self, preset: str, name: str, url: str, apiKey: str) -> None:
