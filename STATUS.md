@@ -1,6 +1,13 @@
 # Status
 
 ## Last completed
+**0.4.4 (2026-09-12, uncommitted):** the Indexers page adds from the server's preset
+catalog (`IndexerListModel.presets` / `loadPresets()` / `addIndexer(preset, name, url,
+apiKey)`; the dialog shows only the fields a preset needs and flags Cloudflare ones), and
+Settings gained the external FlareSolverr/Byparr URL. The app icon is set from the hicolor
+theme so installed builds show it (a checkout falls back to `assets/logo.svg`). Model test
+re-verified against the dev backend; the QML awaits the real-desktop pass.
+
 **0.4.3 (2026-09-12):** Movies and TV read the merged library from the-den's
 `/api/library/movies|series` (needs the-den 0.4.3), so titles that are only on Plex show
 up with their Plex poster (the thumb proxy URL gets `?api_key=` because QML `Image` can't

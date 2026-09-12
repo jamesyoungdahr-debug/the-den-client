@@ -36,7 +36,7 @@ HoltPage {
 
         PageHeader {
             title: "Movies"
-            meta: movieModel.denCount + " in The Den" + (movieModel.plexCount ? " · " + movieModel.plexCount + " on Plex" : "")
+            meta: movieModel.count > 0 ? movieModel.count + " movies · " + movieModel.availableCount + " available · " + movieModel.trackedCount + " tracked" : ""
             Chip { text: "All"; on: page.filter === "all"; onClicked: page.filter = "all" }
             Chip { text: "Wanted"; on: page.filter === "missing"; onClicked: page.filter = "missing" }
             Chip { text: "Have"; on: page.filter === "have"; onClicked: page.filter = "have" }

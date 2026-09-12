@@ -35,7 +35,7 @@ HoltPage {
 
         PageHeader {
             title: "TV"
-            meta: (seriesModel.count - seriesModel.plexCount) + " series in The Den" + (seriesModel.plexCount ? " · " + seriesModel.plexCount + " on Plex" : "")
+            meta: seriesModel.count > 0 ? seriesModel.count + " series · " + seriesModel.availableCount + " available · " + seriesModel.trackedCount + " tracked" : ""
             Chip { text: "All"; on: page.filter === "all"; onClicked: page.filter = "all" }
             Chip { text: "Incomplete"; on: page.filter === "missing"; onClicked: page.filter = "missing" }
             Chip { visible: seriesModel.plexCount > 0; text: "On Plex"; on: page.filter === "plex"; onClicked: page.filter = "plex" }

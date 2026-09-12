@@ -42,7 +42,7 @@ def step1_initial_refresh() -> None:
 def step2_add() -> None:
     dump_rows("after initial refresh")
     print("-- step 2: add indexer --")
-    model.addIndexer("Client Test Indexer", "http://127.0.0.1:9999/api", "", "torznab")
+    model.addIndexer("", "Client Test Indexer", "http://127.0.0.1:9999/api", "")
     QTimer.singleShot(1000, step3_verify_added)
 
 

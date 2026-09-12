@@ -27,6 +27,8 @@ class SeriesListModel(JsonListModel):
 
     statsChanged = Signal()
     plexCount = Property(int, lambda self: sum(1 for s in self._items if s.get("on_plex")), notify=statsChanged)
+    availableCount = Property(int, lambda self: sum(1 for s in self._items if s.get("available")), notify=statsChanged)
+    trackedCount = Property(int, lambda self: sum(1 for s in self._items if s.get("id")), notify=statsChanged)
 
     def _set_items(self, items: list[dict]) -> None:
         super()._set_items(items)

@@ -12,6 +12,7 @@ HoltPage {
     padding: Theme.space4
 
     Component.onCompleted: {
+        indexerModel.loadPresets()
         indexerModel.refresh()
         Controls.ApplicationWindow.window.pageAction = { text: "Add indexer", trigger: function () { addDialog.open() } }
     }
@@ -33,7 +34,7 @@ HoltPage {
         width: page.width - 2 * page.padding
         spacing: Theme.space3
 
-        PageHeader { title: "Indexers"; meta: indexerModel.count + " configured · Torznab and Newznab" }
+        PageHeader { title: "Indexers"; meta: indexerModel.count + " configured · public trackers, usenet, Torznab and Newznab" }
         StatusBanner { id: banner }
 
         Repeater {
@@ -43,7 +44,7 @@ HoltPage {
                 thumbWidth: 0
                 readonly property var result: page.testResults[model.indexerId]
                 Text { text: model.name; font.family: Theme.fontCore; font.pixelSize: 14; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
-                Meta { text: model.protocol + " · " + model.url; Layout.fillWidth: true }
+                Meta { text: (model.implementation || model.protocol) + " · " + model.url; Layout.fillWidth: true }
                 actions: [
                     Badge { tone: result ? (result.ok ? "available" : "error") : (model.indexerEnabled ? "pending" : "missing"); label: result ? (result.ok ? "reachable" : "failed") : (model.indexerEnabled ? "enabled" : "disabled") },
                     HoltButton { small: true; text: "Test"; onClicked: indexerModel.testIndexer(model.indexerId) },
@@ -55,7 +56,7 @@ HoltPage {
         EmptyState {
             visible: !indexerModel.loading && indexerModel.count === 0
             title: "No indexers yet"
-            body: "Add a Torznab or Newznab endpoint (Jackett, Prowlarr, or a tracker's own API) and automation can start searching."
+            body: "Pick a public tracker, a usenet indexer, or a Torznab/Newznab endpoint and automation can start searching."
             actionText: "Add indexer"
             onAction: addDialog.open()
         }
@@ -64,20 +65,73 @@ HoltPage {
     HoltDialog {
         id: addDialog
         title: "Add an indexer"
-        Field { label: "Name"; HoltTextField { id: nameField } }
-        Field { label: "URL"; HoltTextField { id: urlField; placeholderText: "https://indexer.example/api" } }
-        Field { label: "API key"; HoltTextField { id: apiKeyField; echoMode: TextInput.Password } }
+        readonly property var preset: (function() { for (var i = 0; i < indexerModel.presets.length; i++) if (indexerModel.presets[i].slug === presetField.currentValue) return indexerModel.presets[i]; return null })()
+
         Field {
-            label: "Protocol"
-            Controls.ComboBox { id: protocolField; model: ["torznab", "newznab"]; font.family: Theme.fontCore }
+            label: "Indexer"
+            Controls.ComboBox {
+                id: presetField
+                Layout.fillWidth: true
+                font.family: Theme.fontCore
+                textRole: "name"
+                valueRole: "slug"
+                model: indexerModel.presets
+                onActivated: addDialog.applyPreset()
+            }
         }
+
+        Meta {
+            visible: !!preset
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+            text: preset ? preset.description + (preset.cloudflare ? " Needs a Cloudflare solver (built in when Chromium is on the server, or a FlareSolverr/Byparr URL in Settings)." : "") : ""
+        }
+
+        Field { label: "Name"; HoltTextField { id: nameField } }
+        Field {
+            label: "URL"
+            visible: !preset || preset.fields.indexOf("url") !== -1
+            HoltTextField {
+                id: urlField
+                placeholderText: "https://indexer.example/api"
+            }
+        }
+        Field {
+            label: "API key"
+            visible: !preset || preset.fields.indexOf("api_key") !== -1
+            HoltTextField {
+                id: apiKeyField
+                echoMode: TextInput.Password
+                placeholderText: "from your account page"
+            }
+        }
+
         footer: [
             HoltButton { kind: "quiet"; text: "Cancel"; onClicked: addDialog.close() },
             HoltButton {
                 kind: "primary"; text: "Add"
-                enabled: nameField.text.length > 0 && urlField.text.length > 0
-                onClicked: { indexerModel.addIndexer(nameField.text, urlField.text, apiKeyField.text, protocolField.currentText); nameField.text = ""; urlField.text = ""; apiKeyField.text = ""; addDialog.close() }
+                enabled: nameField.text.length > 0 && urlField.text.length > 0 && (!preset || !preset.needs_api_key || apiKeyField.text.length > 0)
+                onClicked: {
+                    indexerModel.addIndexer(preset ? preset.slug : "", nameField.text, urlField.text, apiKeyField.text);
+                    nameField.text = "";
+                    urlField.text = "";
+                    apiKeyField.text = "";
+                    addDialog.close();
+                }
             }
         ]
+
+        function applyPreset() {
+            if (preset) {
+                nameField.text = preset.name;
+                urlField.text = preset.url;
+                apiKeyField.text = "";
+            }
+        }
+
+        onOpened: {
+            presetField.currentIndex = 0;
+            applyPreset();
+        }
     }
 }

@@ -39,6 +39,7 @@ HoltPage {
             request_movie_limit: num(movieLimitField.text, 10),
             request_series_limit: num(seriesLimitField.text, 5),
             request_limit_days: num(limitDaysField.text, 7),
+            flaresolverr_url: solverField.text,
         })
     }
 
@@ -119,6 +120,10 @@ HoltPage {
                 Meta { text: "Per-person limits are set on the web Users page. Admins have no quota."; Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone }
             }
 
+            Section {
+                name: "Indexers"; note: "Cloudflare"
+                Field { label: "External FlareSolverr / Byparr URL"; hint: "Optional. Leave blank to use the built-in solver (needs Chromium on the server)."; HoltTextField { id: solverField; text: page.s.flaresolverr_url || ""; placeholderText: "http://127.0.0.1:8191" } }
+            }
             Section {
                 name: "Notifications"; note: "optional"
                 Field { label: "Discord webhook · " + (page.s.has_discord_webhook ? "set" : "not set"); HoltTextField { id: discordField; echoMode: TextInput.Password; placeholderText: "leave blank to keep the current value" } }

@@ -36,6 +36,8 @@ class MovieListModel(JsonListModel):
     statsChanged = Signal()
     plexCount = Property(int, lambda self: sum(1 for m in self._items if m.get("on_plex")), notify=statsChanged)
     denCount = Property(int, lambda self: sum(1 for m in self._items if m.get("id")), notify=statsChanged)
+    availableCount = Property(int, lambda self: sum(1 for m in self._items if m.get("available")), notify=statsChanged)
+    trackedCount = Property(int, lambda self: sum(1 for m in self._items if m.get("id")), notify=statsChanged)
 
     def _set_items(self, items: list[dict]) -> None:
         super()._set_items(items)

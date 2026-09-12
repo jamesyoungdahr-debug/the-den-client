@@ -61,9 +61,10 @@ def main() -> None:
     app.setApplicationName("The Den")
     app.setOrganizationName("the-den")
     app.setDesktopFileName("the-den-client")
+    # Installed builds have the icon in the hicolor theme, a checkout has it in assets/.
     logo = Path(__file__).resolve().parents[1] / "assets" / "logo.svg"
-    if logo.exists():
-        app.setWindowIcon(QIcon(str(logo)))
+    icon = QIcon.fromTheme("the-den-client", QIcon(str(logo))) if logo.exists() else QIcon.fromTheme("the-den-client")
+    app.setWindowIcon(icon)
 
     engine = QQmlApplicationEngine()
     api = ApiClient()
