@@ -16,6 +16,8 @@ HoltPage {
 
     Component.onCompleted: {
         settingsController.load()
+        notificationsModel.loadCatalogue()
+        notificationsModel.refresh()
         Controls.ApplicationWindow.window.pageAction = { text: "Save", trigger: function () { page.save() } }
     }
     Controls.StackView.onDeactivated: Controls.ApplicationWindow.window.pageAction = null
@@ -125,8 +127,25 @@ HoltPage {
                 Field { label: "External FlareSolverr / Byparr URL"; hint: "Optional. Leave blank to use the built-in solver (needs Chromium on the server)."; HoltTextField { id: solverField; text: page.s.flaresolverr_url || ""; placeholderText: "http://127.0.0.1:8191" } }
             }
             Section {
-                name: "Notifications"; note: "optional"
-                Field { label: "Discord webhook · " + (page.s.has_discord_webhook ? "set" : "not set"); HoltTextField { id: discordField; echoMode: TextInput.Password; placeholderText: "leave blank to keep the current value" } }
+                name: "Notifications"; note: "Discord, ntfy, webhook, Telegram, Pushover"
+                Repeater {
+                    model: notificationsModel
+                    delegate: HoltRow {
+                        required property var model
+                        thumbWidth: 0
+                        Text { text: model.name; font.family: Theme.fontCore; font.pixelSize: 14; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
+                        Meta { text: model.kind + " · " + (model.events.length ? model.events.length + " events" : "all events"); Layout.fillWidth: true }
+                        actions: [
+                            Badge { tone: model.agentEnabled ? "available" : "missing"; label: model.agentEnabled ? "enabled" : "disabled" },
+                            HoltButton { small: true; text: "Test"; onClicked: notificationsModel.testAgent(model.agentId) },
+                            HoltButton { small: true; text: "Edit"; onClicked: agentDialog.openFor(model) },
+                            HoltButton { kind: "quiet"; small: true; text: "Delete"; onClicked: notificationsModel.deleteAgent(model.agentId) }
+                        ]
+                    }
+                }
+                EmptyState { visible: !notificationsModel.loading && notificationsModel.count === 0; title: "No agents yet"; body: "Add Discord, ntfy, a webhook, Telegram or Pushover."; actionText: "Add agent"; onAction: agentDialog.openFor(null) }
+                HoltButton { kind: "secondary"; small: true; text: "Add agent"; visible: notificationsModel.count > 0; onClicked: agentDialog.openFor(null) }
+                Field { label: "Legacy Discord webhook · " + (page.s.has_discord_webhook ? "set" : "not set"); hint: "Still fires for every event; add it as an agent above to pick events."; HoltTextField { id: discordField; echoMode: TextInput.Password; placeholderText: "leave blank to keep the current value" } }
             }
 
             Section {
@@ -146,5 +165,78 @@ HoltPage {
                 Meta { text: page.s.auth_required ? "Every page and API call needs a signed-in account; this client uses the API token from your profile." : "Anyone not signed in is an admin. Turn sign-in on from the web Settings page once everyone has an account."; Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone }
             }
         }
+    }
+
+    // Notification agent add/edit (M15). Nested children reach the dialog's state as agentDialog.<prop>.
+    HoltDialog {
+        id: agentDialog
+        title: "Notification agent"
+        property int agentId: 0
+        property var current: null
+        property var values: ({})
+        property var selectedEvents: []
+        readonly property var secretKeys: ["token", "webhook_url", "bot_token", "app_token", "user_key"]
+        readonly property var kindDef: notificationsModel.kinds[kindField.currentIndex] || null
+
+        function kindIndex(k) { for (var i = 0; i < notificationsModel.kinds.length; i++) if (notificationsModel.kinds[i].kind === k) return i; return 0 }
+        function openFor(m) {
+            agentId = m ? m.agentId : 0
+            current = m
+            nameField.text = m ? m.name : ""
+            kindField.currentIndex = m ? kindIndex(m.kind) : 0
+            enabledBox.checked = m ? m.agentEnabled : true
+            values = m ? Object.assign({}, m.config) : {}
+            selectedEvents = m ? m.events.slice() : []
+            open()
+        }
+
+        Field { label: "Name"; HoltTextField { id: nameField; placeholderText: "e.g. Phone" } }
+        Field { label: "Kind"; Controls.ComboBox { id: kindField; model: notificationsModel.kinds; textRole: "kind"; font.family: Theme.fontCore } }
+        Repeater {
+            model: agentDialog.kindDef ? agentDialog.kindDef.fields : []
+            delegate: Field {
+                required property string modelData
+                readonly property bool secret: agentDialog.secretKeys.indexOf(modelData) !== -1
+                label: modelData.replace(/_/g, " ") + (modelData === "token" ? " (optional)" : "")
+                HoltTextField {
+                    text: parent.parent.secret ? "" : (agentDialog.values[parent.parent.modelData] || "")
+                    echoMode: parent.parent.secret ? TextInput.Password : TextInput.Normal
+                    placeholderText: agentDialog.current && parent.parent.secret && agentDialog.current["has" + parent.parent.modelData.split("_").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1) }).join("")]
+                        ? "leave blank to keep the current value"
+                        : (parent.parent.modelData === "url" && agentDialog.kindDef && agentDialog.kindDef.kind === "ntfy" ? "https://ntfy.sh" : "")
+                    onTextChanged: { var v = agentDialog.values; v[parent.parent.modelData] = text; agentDialog.values = v }
+                }
+            }
+        }
+        Field {
+            label: "Events"
+            hint: "Leave all unselected to receive every event."
+            Flow {
+                spacing: 6
+                Repeater {
+                    model: notificationsModel.events
+                    delegate: Chip {
+                        required property var modelData
+                        text: modelData.label
+                        on: agentDialog.selectedEvents.indexOf(modelData.key) !== -1
+                        onClicked: { var e = agentDialog.selectedEvents.slice(); var i = e.indexOf(modelData.key); if (i === -1) e.push(modelData.key); else e.splice(i, 1); agentDialog.selectedEvents = e }
+                    }
+                }
+            }
+        }
+        Controls.CheckBox { id: enabledBox; text: "Enabled"; font.family: Theme.fontCore }
+        footer: [
+            HoltButton { kind: "quiet"; text: "Cancel"; onClicked: agentDialog.close() },
+            HoltButton { kind: "secondary"; text: "Send test"; enabled: !!agentDialog.kindDef; onClicked: agentDialog.agentId ? notificationsModel.testAgent(agentDialog.agentId) : notificationsModel.testConfig(agentDialog.kindDef.kind, agentDialog.values) },
+            HoltButton {
+                kind: "primary"; text: "Save"
+                enabled: nameField.text.length > 0 && !!agentDialog.kindDef
+                onClicked: {
+                    if (agentDialog.agentId) notificationsModel.updateAgent(agentDialog.agentId, nameField.text, agentDialog.kindDef.kind, agentDialog.values, agentDialog.selectedEvents, enabledBox.checked)
+                    else notificationsModel.addAgent(nameField.text, agentDialog.kindDef.kind, agentDialog.values, agentDialog.selectedEvents, enabledBox.checked)
+                    agentDialog.close()
+                }
+            }
+        ]
     }
 }

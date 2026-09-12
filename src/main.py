@@ -13,6 +13,7 @@ from models.candidates_model import CandidatesModel
 from models.discover_model import DetailController, DiscoverSearchModel, RailModel
 from models.episodes_model import EpisodesModel
 from models.indexer_model import IndexerListModel
+from models.notifications_model import NotificationAgentsModel
 from models.movie_model import MovieListModel, MovieSearchResultsModel
 from models.requests_model import RequestsModel
 from models.series_model import SeriesListModel, SeriesSearchResultsModel
@@ -30,6 +31,7 @@ def build_context(api: ApiClient) -> dict:
         "apiClient": api,
         "Theme": Theme(),
         "indexerModel": IndexerListModel(api),
+        "notificationsModel": NotificationAgentsModel(api),
         "movieModel": MovieListModel(api),
         "movieSearchModel": MovieSearchResultsModel(api),
         "candidatesModel": CandidatesModel(api, resource="movies"),
