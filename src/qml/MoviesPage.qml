@@ -61,12 +61,14 @@ HoltPage {
                     onClicked: if (model.tmdbId) Controls.ApplicationWindow.window.openDetail("movie", model.tmdbId)
                     Badge { visible: model.onPlex; anchors { left: parent.left; leftMargin: 8 } y: Math.round(parent.posterWidth * 1.5) - height - 8; solid: true; tone: "available"; label: "Plex" }
 
+                    Badge { visible: model.upgradable; anchors { right: parent.right; rightMargin: 8 } y: Math.round(parent.posterWidth * 1.5) - height - 8; solid: true; tone: "partial"; label: "upgradable" }
+
                     Row {
                         // bottom-right of the poster, clear of the status badge
                         anchors { right: parent.right; rightMargin: 6 }
                         y: Math.round(parent.posterWidth * 1.5) - height - 6
                         spacing: 4
-                        HoltButton { visible: model.movieId > 0 && !model.hasFile; small: true; text: "Releases"; onClicked: Controls.ApplicationWindow.window.push("CandidatesPage.qml", { itemId: model.movieId, heading: model.title }) }
+                        HoltButton { visible: model.movieId > 0 && (!model.hasFile || model.upgradable); small: true; text: "Releases"; onClicked: Controls.ApplicationWindow.window.push("CandidatesPage.qml", { itemId: model.movieId, heading: model.title }) }
                         HoltButton { visible: apiClient.isAdmin && model.movieId > 0; small: true; kind: "quiet"; text: "✕"; onClicked: movieModel.deleteMovie(model.movieId) }
                     }
                 }

@@ -67,8 +67,8 @@ HoltPage {
                 }
                 Meta { text: model.airDate ? "aired " + model.airDate : "no air date" }
                 actions: [
-                    Badge { tone: model.hasFile ? "available" : "missing"; label: model.hasFile ? "have" : "missing" },
-                    HoltButton { visible: !model.hasFile; small: true; text: "Find releases"; onClicked: Controls.ApplicationWindow.window.push("CandidatesPage.qml", { candidatesSource: episodeCandidatesModel, itemId: model.episodeId, heading: page.seriesTitle + " S" + H.pad(model.seasonNumber) + "E" + H.pad(model.episodeNumber) }) }
+                    Badge { tone: model.upgradable ? "partial" : (model.hasFile ? "available" : "missing"); label: model.upgradable ? (model.fileQuality || "have") + " · upgradable" : (model.hasFile ? "have" : "missing") },
+                    HoltButton { visible: !model.hasFile || model.upgradable; small: true; text: "Find releases"; onClicked: Controls.ApplicationWindow.window.push("CandidatesPage.qml", { candidatesSource: episodeCandidatesModel, itemId: model.episodeId, heading: page.seriesTitle + " S" + H.pad(model.seasonNumber) + "E" + H.pad(model.episodeNumber) }) }
                 ]
             }
         }

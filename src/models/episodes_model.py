@@ -15,6 +15,9 @@ class EpisodesModel(JsonListModel):
         ("title", "title", ""),
         ("airDate", "air_date", ""),
         ("hasFile", "has_file", False),
+        ("fileQuality", "file_quality", ""),
+        ("fileScore", "file_score", 0),
+        ("upgradable", "upgradable", False),
     ]
 
     seriesChanged = Signal()
