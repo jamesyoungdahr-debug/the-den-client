@@ -14,6 +14,7 @@ from models.discover_model import DetailController, DiscoverSearchModel, RailMod
 from models.episodes_model import EpisodesModel
 from models.manual_import_model import ManualImportModel
 from models.health_model import HealthModel
+from models.import_lists_model import ImportListsModel
 from models.indexer_model import IndexerListModel
 from models.notifications_model import NotificationAgentsModel
 from models.movie_model import MovieListModel, MovieSearchResultsModel
@@ -35,6 +36,7 @@ def build_context(api: ApiClient) -> dict:
         "indexerModel": IndexerListModel(api),
         "healthModel": HealthModel(api),
         "notificationsModel": NotificationAgentsModel(api),
+        "importListsModel": ImportListsModel(api),
         "movieModel": MovieListModel(api),
         "movieSearchModel": MovieSearchResultsModel(api),
         "candidatesModel": CandidatesModel(api, resource="movies"),

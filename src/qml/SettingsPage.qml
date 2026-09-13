@@ -149,6 +149,27 @@ HoltPage {
             }
 
             Section {
+                name: "Import Lists"; note: "TMDB list, Plex watchlist"
+                Repeater {
+                    model: importListsModel
+                    delegate: HoltRow {
+                        required property var model
+                        thumbWidth: 0
+                        Text { text: model.name; font.family: Theme.fontCore; font.pixelSize: 14; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
+                        Meta { text: (model.kind === "tmdb_list" ? "TMDB list " + (model.config.list_id || "") : "Plex watchlist") + " · " + (model.lastResult || "never synced"); Layout.fillWidth: true }
+                        actions: [
+                            Badge { tone: model.listEnabled ? "available" : "missing"; label: model.listEnabled ? "enabled" : "disabled" },
+                            HoltButton { small: true; text: "Sync now"; onClicked: importListsModel.syncList(model.listId) },
+                            HoltButton { small: true; text: "Edit"; onClicked: importListDialog.openFor(model) },
+                            HoltButton { kind: "quiet"; small: true; text: "Delete"; onClicked: importListsModel.deleteList(model.listId) }
+                        ]
+                    }
+                }
+                EmptyState { visible: !importListsModel.loading && importListsModel.count === 0; title: "No import lists yet"; body: "Auto-add from a TMDB list or your Plex watchlist."; actionText: "Add list"; onAction: importListDialog.openFor(null) }
+                HoltButton { kind: "secondary"; small: true; text: "Add list"; visible: importListsModel.count > 0; onClicked: importListDialog.openFor(null) }
+            }
+
+            Section {
                 name: "Plex"
                 note: page.s.has_plex_token ? "connected as " + (page.s.plex_owner_username || "owner") : "not connected"
                 Meta { text: page.s.has_plex_token ? ("Server: " + (page.s.plex_server_name || "not chosen") + " · last scan " + (page.s.plex_last_scan_result || "never")) : "Connect the owner account from the web Settings page; the client can then scan on the interval below."; Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone }
@@ -235,6 +256,56 @@ HoltPage {
                     if (agentDialog.agentId) notificationsModel.updateAgent(agentDialog.agentId, nameField.text, agentDialog.kindDef.kind, agentDialog.values, agentDialog.selectedEvents, enabledBox.checked)
                     else notificationsModel.addAgent(nameField.text, agentDialog.kindDef.kind, agentDialog.values, agentDialog.selectedEvents, enabledBox.checked)
                     agentDialog.close()
+                }
+            }
+        ]
+    }
+
+    // Import list add/edit (E1).
+    HoltDialog {
+        id: importListDialog
+        title: "Import list"
+        property int listId: 0
+        property var current: null
+
+        function openFor(m) {
+            listId = m ? m.listId : 0
+            current = m
+            ilNameField.text = m ? m.name : ""
+            ilKindField.currentIndex = m && m.kind === "plex_watchlist" ? 1 : 0
+            ilListIdField.text = m && m.config ? (m.config.list_id || "") : ""
+            ilEnabledBox.checked = m ? m.listEnabled : true
+            open()
+        }
+
+        Field { label: "Name"; HoltTextField { id: ilNameField; placeholderText: "e.g. Watchlist movies" } }
+        Field {
+            label: "Kind"
+            Controls.ComboBox { id: ilKindField; model: ["TMDB list", "Plex watchlist"]; font.family: Theme.fontCore }
+        }
+        Field {
+            label: "TMDB list ID"
+            hint: "The numeric ID from the list's TMDB URL (themoviedb.org/list/<id>). Public lists only, movies only."
+            visible: ilKindField.currentIndex === 0
+            HoltTextField { id: ilListIdField }
+        }
+        Meta {
+            visible: ilKindField.currentIndex === 1
+            text: "Reads the connected Plex account's Discover watchlist (Settings → Plex must be connected first). Movies and series with a TMDB match are added."
+            Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone
+        }
+        Controls.CheckBox { id: ilEnabledBox; text: "Enabled"; font.family: Theme.fontCore }
+        footer: [
+            HoltButton { kind: "quiet"; text: "Cancel"; onClicked: importListDialog.close() },
+            HoltButton {
+                kind: "primary"; text: "Save"
+                enabled: ilNameField.text.length > 0
+                onClicked: {
+                    var kind = ilKindField.currentIndex === 1 ? "plex_watchlist" : "tmdb_list"
+                    var config = kind === "tmdb_list" ? {"list_id": ilListIdField.text.trim()} : {}
+                    if (importListDialog.listId) importListsModel.updateList(importListDialog.listId, ilNameField.text, kind, config, ilEnabledBox.checked)
+                    else importListsModel.addList(ilNameField.text, kind, config, ilEnabledBox.checked)
+                    importListDialog.close()
                 }
             }
         ]
