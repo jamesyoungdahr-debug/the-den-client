@@ -243,6 +243,34 @@ HoltPage {
                 }
             }
 
+            GlassPanel {
+                Layout.fillWidth: true
+                visible: page.ready && page.item.history && page.item.history.length > 0
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 6
+                    Eyebrow { text: "History" }
+                    Repeater {
+                        model: page.ready ? page.item.history : []
+                        delegate: RowLayout {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                spacing: 2
+                                Layout.fillWidth: true
+                                Text { text: modelData.release_title + (modelData.season_number ? " · Season " + modelData.season_number : ""); font.family: Theme.fontCore; font.pixelSize: 13; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
+                                Meta { text: (modelData.message || "") + (modelData.created_at ? " · " + modelData.created_at.slice(0, 16).replace("T", " ") : ""); Layout.fillWidth: true; elide: Text.ElideRight }
+                            }
+                            Badge {
+                                readonly property var toneMap: ({ grabbed: "processing", imported: "available", upgraded: "available", download_failed: "error", removed: "missing" })
+                                tone: toneMap[modelData.event] || "missing"
+                                label: modelData.event
+                            }
+                        }
+                    }
+                }
+            }
+
             Rail {
                 id: recRail
                 title: "Recommended"
