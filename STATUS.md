@@ -46,6 +46,25 @@ rebuilt on the backend's current API:
   signal, or re-declaring the base's name, segfaults), and integer `font.pixelSize`.
 
 ## Currently working on
+**Session handoff note (2026-09-13):** working through Tier 2 (docs/feature-research.md E1-E10) in
+the-den server repo, table order, autonomously. This client (KDE) only gets E-items whose surfaces
+column includes it -- E4/E7/E8 deliberately skipped it (their own surfaces columns don't call for
+KDE). E6 (subtitles) *should* have reached KDE per its surfaces column ("settings on all surfaces")
+but doesn't yet -- a real gap, not a deliberate cut, worth closing if this is picked back up. See
+the-den's CONTEXT.txt "PICK UP HERE" section for exactly where to resume (currently: E9 research
+done, not yet implemented).
+
+**0.4.15 (E2, 2026-09-13):** Root Folders section on Settings: named library folders per
+media type (Movies vs Kids Movies, 4K vs 1080p, etc.) with a default per type, a
+RootFoldersModel (JsonListModel over `/api/root-folders`, mirrors ImportListsModel) and
+an add/edit dialog. No per-title picker yet (matches the same gap quality profiles
+already have on every surface). QML harness: 15 pages clean.
+
+**0.4.14 (E1, 2026-09-13):** Import Lists section on Settings: auto-add movies/series
+from a TMDB list or a Plex watchlist on a schedule, an ImportListsModel (mirrors
+NotificationAgentsModel) and an add/edit dialog for picking a TMDB list ID or a Plex
+watchlist. QML harness: 15 pages clean including SettingsPage.qml.
+
 **0.4.13 (E5, 2026-09-13):** Detail page gains a History panel (`page.item.history`, read
 straight through from the server's JSON detail payload -- no model change needed since
 `JsonRecord` already passes the raw JSON through as a `QVariantMap`), showing every
