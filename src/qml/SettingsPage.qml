@@ -206,12 +206,6 @@ HoltPage {
                     HoltButton { text: "Scan now"; enabled: page.s.has_plex_token === true; Layout.alignment: Qt.AlignBottom; onClicked: settingsController.scanPlex() }
                 }
             }
-
-            Section {
-                name: "Accounts"
-                note: page.s.auth_required ? "sign-in required" : "sign-in optional"
-                Meta { text: page.s.auth_required ? "Every page and API call needs a signed-in account; this client uses the API token from your profile." : "Anyone not signed in is an admin. Turn sign-in on from the web Settings page once everyone has an account."; Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone }
-            }
         }
     }
 

@@ -51,6 +51,12 @@ finished. This client got every E-item whose surfaces column includes it; E4/E7/
 it on purpose. The E6 gap is closed in 0.4.16. See the-den's CONTEXT.txt "PICK UP HERE" section for
 what's next; the real-desktop pass on HoltOS is still open.
 
+**0.5.0 (M33, 2026-09-13):** needs the-den 0.8.0. Sign-in is always required: "Continue without
+signing in" and the anonymous account row are gone, `ApiClient` drops `canBrowse` and
+`authRequired`, and a server whose web setup isn't finished is reported on the login page ("This
+server hasn't been set up yet. Finish setup in its web UI, then connect again.") instead of
+connecting. Settings drops the Accounts section. `tests/run_all.sh` green against an M33 server.
+
 **0.4.16 (E6, 2026-09-13):** Settings gains a Subtitles section (OpenSubtitles API key + languages).
 The key joins `SECRETS` in the settings controller, so a blank field keeps the stored value, and the
 field clears after a save like the other secrets. QML harness: SettingsPage.qml clean;

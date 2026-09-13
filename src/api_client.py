@@ -6,9 +6,8 @@ cookie session; the client then asks POST /api/auth/token for a personal API tok
 keeps only that (in QSettings), sending it as X-Api-Key from then on -- no password is
 stored. "Sign in with Plex" uses the backend's PIN flow: POST /api/auth/plex/pin gives a
 code and a plex.tv URL to open in the system browser; the client polls POST /api/auth/plex
-until plex.tv reports the PIN claimed (202 while waiting). While the server runs with
-sign-in optional, an anonymous connection is reported as an admin and everything works
-without an account, exactly like the web UI."""
+until plex.tv reports the PIN claimed (202 while waiting). Sign-in is always required, and
+the server answers nothing but /health until its web setup is finished (M33)."""
 
 from __future__ import annotations
 
@@ -82,12 +81,10 @@ class ApiClient(QObject):
     busy = Property(bool, lambda self: self._busy, notify=busyChanged)
 
     # Who we are, per GET /api/auth/me
-    signedIn = Property(bool, lambda self: bool(self._me) and not self._me.get("anonymous", False), notify=sessionChanged)
-    canBrowse = Property(bool, lambda self: bool(self._me), notify=sessionChanged)  # signed in, or anonymous while sign-in is optional
+    signedIn = Property(bool, lambda self: bool(self._me), notify=sessionChanged)
     isAdmin = Property(bool, lambda self: bool(self._me.get("is_admin")), notify=sessionChanged)
     username = Property(str, lambda self: self._me.get("username") or "", notify=sessionChanged)
     userInitial = Property(str, lambda self: (self._me.get("username") or "?")[:1].upper(), notify=sessionChanged)
-    authRequired = Property(bool, lambda self: bool(self._server.get("auth_required")), notify=sessionChanged)
     quota = Property("QVariantMap", lambda self: self._me.get("quota") or {}, notify=sessionChanged)
     me = Property("QVariantMap", lambda self: dict(self._me), notify=sessionChanged)
 
@@ -170,7 +167,16 @@ class ApiClient(QObject):
         def on_health(status: int, body) -> None:
             if seq != self._request_seq:
                 return  # superseded by a newer attempt
-            if status == 200 and isinstance(body, dict) and body.get("status") == "ok":
+            if status == 200 and isinstance(body, dict) and body.get("status") == "ok" and body.get("setup_complete", True) is False:
+                self._server = {}
+                self._connected = False
+                self._me = {}
+                self._status_text = "This server hasn't been set up yet. Finish setup in its web UI, then connect again."
+                self._set_busy(False)
+                self.connectedChanged.emit()
+                self.statusTextChanged.emit()
+                self.sessionChanged.emit()
+            elif status == 200 and isinstance(body, dict) and body.get("status") == "ok":
                 self._server = body
                 self._connected = True
                 self._status_text = "Connected"
@@ -195,7 +201,6 @@ class ApiClient(QObject):
             self._set_busy(False)
             if status == 200 and isinstance(body, dict):
                 self._me = body
-                self._server["auth_required"] = body.get("auth_required", self._server.get("auth_required"))
             else:
                 self._me = {}
                 if status == 401 and self._api_token:
@@ -289,4 +294,3 @@ class ApiClient(QObject):
         self._set_api_token("")
         self._me = {}
         self.sessionChanged.emit()
-        self.refreshSession()  # anonymous may still be allowed in

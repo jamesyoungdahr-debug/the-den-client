@@ -77,7 +77,7 @@ Controls.ApplicationWindow {
 
     // Route: login page until we can browse, otherwise the active nav page.
     function route() {
-        var shell = apiClient.connected && apiClient.canBrowse
+        var shell = apiClient.connected && apiClient.signedIn
         if (!shell) {
             if (!stack.currentItem || stack.currentItem.objectName !== "loginPage")
                 stack.replace(null, Qt.resolvedUrl("LoginPage.qml"))
@@ -122,7 +122,7 @@ Controls.ApplicationWindow {
         // ---- sidebar ---------------------------------------------------------------------
         Rectangle {
             id: sidebar
-            visible: apiClient.connected && apiClient.canBrowse
+            visible: apiClient.connected && apiClient.signedIn
             Layout.fillHeight: true
             Layout.preferredWidth: root.railMode ? Theme.sidebarRail : Theme.sidebarWidth
             Behavior on Layout.preferredWidth { NumberAnimation { duration: Theme.motionBase; easing.type: Easing.OutCubic } }
@@ -204,19 +204,19 @@ Controls.ApplicationWindow {
                         RowLayout {
                             anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
                             spacing: 10
-                            Avatar { initial: apiClient.signedIn ? apiClient.userInitial : "•" }
+                            Avatar { initial: apiClient.userInitial }
                             ColumnLayout {
                                 visible: !root.railMode
                                 spacing: 0
                                 Layout.fillWidth: true
-                                Text { text: apiClient.signedIn ? apiClient.username : "anonymous"; font.family: Theme.fontCore; font.pixelSize: 13; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
-                                Meta { text: (apiClient.isAdmin ? "admin" : "user") + " · " + (apiClient.signedIn ? "sign out" : "sign in") }
+                                Text { text: apiClient.username; font.family: Theme.fontCore; font.pixelSize: 13; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
+                                Meta { text: (apiClient.isAdmin ? "admin" : "user") + " · sign out" }
                             }
                         }
                         MouseArea {
                             id: accountMouse
                             anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: apiClient.signedIn ? apiClient.logout() : stack.replace(null, Qt.resolvedUrl("LoginPage.qml"))
+                            onClicked: apiClient.logout()
                         }
                     }
                 }

@@ -96,7 +96,7 @@ HoltPage {
                             id: actionButton
                             kind: "primary"
                             visible: page.ready && text !== ""
-                            enabled: apiClient.canBrowse
+                            enabled: apiClient.signedIn
                             text: {
                                 if (!page.ready) return ""
                                 var mine = page.myRequest()

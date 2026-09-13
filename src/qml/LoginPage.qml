@@ -109,13 +109,6 @@ HoltPage {
                     Field { label: "Username"; HoltTextField { id: userField; onAccepted: passField.forceActiveFocus() } }
                     Field { label: "Password"; HoltTextField { id: passField; echoMode: TextInput.Password; onAccepted: apiClient.login(userField.text, passField.text) } }
                     HoltButton { text: "Sign in"; enabled: !apiClient.busy && userField.text.length > 0 && passField.text.length > 0; onClicked: apiClient.login(userField.text, passField.text) }
-
-                    Meta {
-                        visible: apiClient.connected && !apiClient.authRequired && !apiClient.signedIn
-                        text: "This server doesn't require sign-in; you're browsing as an anonymous admin."
-                        Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone
-                    }
-                    HoltButton { visible: apiClient.canBrowse && !apiClient.signedIn; kind: "quiet"; text: "Continue without signing in"; onClicked: Controls.ApplicationWindow.window.navigate("discover") }
                 }
             }
         }
