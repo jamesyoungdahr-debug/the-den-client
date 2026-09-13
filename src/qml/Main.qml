@@ -60,6 +60,9 @@ Controls.ApplicationWindow {
     function openDetail(mediaType, tmdbId) {
         push("DetailPage.qml", { kind: mediaType, tmdbId: tmdbId })
     }
+    function openRail(railModel, title, subtitle) {
+        push("RailPage.qml", { railModel: railModel, railTitle: title, subtitle: subtitle || "" })
+    }
     function search(query) {
         if (!query || !query.trim().length) return
         activeNav = "discover"

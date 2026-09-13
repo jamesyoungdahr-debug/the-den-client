@@ -22,7 +22,7 @@ from models.settings_controller import SettingsController
 from models.torrents_model import TorrentsModel
 from theme import Theme
 
-RAILS = ("trending", "popular-movies", "upcoming-movies", "popular-tv", "on-the-air", "recommended")
+RAILS = ("trending", "trending-movies", "popular-movies", "upcoming-movies", "top-rated-movies", "trending-tv", "popular-tv", "on-the-air", "top-rated-tv", "recommended")
 
 
 def build_context(api: ApiClient) -> dict:

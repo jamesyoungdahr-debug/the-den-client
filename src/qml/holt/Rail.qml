@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls as Controls
 import QtQuick.Layouts
 
 // A titled, horizontally scrolling row of PosterCards over a JsonListModel with the
@@ -9,6 +10,7 @@ ColumnLayout {
     property string subtitle: ""
     property var model: null
     property int posterWidth: Theme.posterMd
+    property bool moreEnabled: false   // shows "View more", which opens the rail as a paged grid
     signal cardClicked(string mediaType, int tmdbId)
 
     visible: (model && (model.count > 0 || model.loading)) ? true : false
@@ -23,6 +25,7 @@ ColumnLayout {
             Meta { text: rail.subtitle; visible: rail.subtitle !== "" }
         }
         Item { Layout.fillWidth: true }
+        HoltButton { kind: "quiet"; small: true; text: "View more ›"; visible: rail.moreEnabled; onClicked: Controls.ApplicationWindow.window.openRail(rail.model, rail.title, rail.subtitle) }
         HoltButton { kind: "quiet"; small: true; text: "‹"; onClicked: list.contentX = Math.max(0, list.contentX - list.width * 0.8) }
         HoltButton { kind: "quiet"; small: true; text: "›"; onClicked: list.contentX = Math.min(list.contentWidth - list.width, list.contentX + list.width * 0.8) }
     }

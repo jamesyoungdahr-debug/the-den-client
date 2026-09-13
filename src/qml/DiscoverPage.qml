@@ -13,7 +13,8 @@ HoltPage {
     title: "Discover"
     padding: 0
 
-    readonly property var rails: [trendingRail, recommendedRail, popularMoviesRail, upcomingMoviesRail, popularTvRail, onTheAirRail]
+    readonly property var rails: [trendingRail, recommendedRail, trendingMoviesRail, popularMoviesRail, upcomingMoviesRail, topRatedMoviesRail, trendingTvRail, popularTvRail, onTheAirRail, topRatedTvRail]
+    property string filter: "all"   // all | movie | tv
     property var hero: null
 
     Component.onCompleted: { healthModel.refresh(); for (var i = 0; i < rails.length; i++) rails[i].refresh() }
@@ -122,12 +123,37 @@ HoltPage {
                 }
             }
 
+            RowLayout {
+                spacing: 6
+                Chip { text: "All"; on: page.filter === "all"; onClicked: page.filter = "all" }
+                Chip { text: "Movies"; on: page.filter === "movie"; onClicked: page.filter = "movie" }
+                Chip { text: "Series"; on: page.filter === "tv"; onClicked: page.filter = "tv" }
+            }
+
             Rail { title: "Recommended for you"; subtitle: "based on what you added recently"; model: recommendedRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
-            Rail { title: "Trending"; subtitle: "movies and series this week"; model: trendingRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
-            Rail { title: "Popular movies"; model: popularMoviesRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
-            Rail { title: "Upcoming"; subtitle: "in cinemas soon"; model: upcomingMoviesRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
-            Rail { title: "Popular series"; model: popularTvRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
-            Rail { title: "On the air"; subtitle: "airing now"; model: onTheAirRail; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+            Rail { title: "Trending this week"; subtitle: "movies and series"; model: trendingRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Theme.space5
+                visible: page.filter !== "tv"
+                PageHeader { title: "Movies"; meta: "from TMDB, with what you already have marked" }
+                Rail { title: "Trending movies"; subtitle: "this week on TMDB"; model: trendingMoviesRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+                Rail { title: "Popular movies"; model: popularMoviesRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+                Rail { title: "Upcoming"; subtitle: "in cinemas soon"; model: upcomingMoviesRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+                Rail { title: "Top rated movies"; subtitle: "all time, by TMDB votes"; model: topRatedMoviesRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Theme.space5
+                visible: page.filter !== "movie"
+                PageHeader { title: "Series"; meta: "from TMDB, with what you already have marked" }
+                Rail { title: "Trending series"; subtitle: "this week on TMDB"; model: trendingTvRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+                Rail { title: "Popular series"; model: popularTvRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+                Rail { title: "On the air"; subtitle: "airing now"; model: onTheAirRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+                Rail { title: "Top rated series"; subtitle: "all time, by TMDB votes"; model: topRatedTvRail; moreEnabled: true; onCardClicked: (t, id) => Controls.ApplicationWindow.window.openDetail(t, id) }
+            }
 
             EmptyState {
                 visible: !trendingRail.loading && trendingRail.count === 0 && !banner.visible

@@ -3,7 +3,7 @@ one movie or series with its availability (library + Plex) and request state."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import Property, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QModelIndex, QUrl, Signal, Slot
 
 from models.base import JsonListModel, JsonRecord
 
@@ -23,20 +23,64 @@ CARD_FIELDS = [
 
 
 class RailModel(JsonListModel):
-    """One Discover rail -- GET /api/discover/{rail}: trending, popular-movies,
-    upcoming-movies, popular-tv, on-the-air, recommended."""
+    """One Discover rail -- GET /api/discover/{rail}?page=N (20 cards a page): trending,
+    trending-movies, popular-movies, upcoming-movies, top-rated-movies, trending-tv,
+    popular-tv, on-the-air, top-rated-tv, recommended. refresh() loads page 1;
+    loadMore() appends the next page (the "View more" grid shares this model)."""
 
     FIELDS = CARD_FIELDS
+    PAGE_SIZE = 20
+    pageChanged = Signal()
 
     def __init__(self, api, rail: str, parent=None):
         super().__init__(api, parent)
         self._rail = rail
+        self._page = 0
+        self._has_more = False
 
     rail = Property(str, lambda self: self._rail, constant=True)
+    page = Property(int, lambda self: self._page, notify=pageChanged)
+    hasMore = Property(bool, lambda self: self._has_more, notify=pageChanged)
+
+    def _set_items(self, items: list[dict]) -> None:
+        super()._set_items(items)
+        self._page = 1
+        self._has_more = len(items) >= self.PAGE_SIZE
+        self.pageChanged.emit()
 
     @Slot()
     def refresh(self) -> None:
         self._fetch(f"/api/discover/{self._rail}")
+
+    @Slot()
+    def loadMore(self) -> None:
+        if self._loading or not self._has_more:
+            return
+        nxt = self._page + 1
+        self._seq += 1
+        seq = self._seq
+        self._set_loading(True)
+
+        def on_done(status: int, body) -> None:
+            if seq != self._seq:
+                return
+            self._set_loading(False)
+            if status != 200 or not isinstance(body, list):
+                self.errorOccurred.emit(self.api.error_message(status, body))
+                return
+            seen = {(i.get("media_type"), i.get("tmdb_id")) for i in self._items}
+            fresh = [i for i in body if (i.get("media_type"), i.get("tmdb_id")) not in seen]
+            if fresh:
+                first = len(self._items)
+                self.beginInsertRows(QModelIndex(), first, first + len(fresh) - 1)
+                self._items.extend(fresh)
+                self.endInsertRows()
+                self.countChanged.emit()
+            self._page = nxt
+            self._has_more = len(body) >= self.PAGE_SIZE
+            self.pageChanged.emit()
+
+        self.api.request("GET", f"/api/discover/{self._rail}?page={nxt}", on_done=on_done)
 
 
 class DiscoverSearchModel(JsonListModel):

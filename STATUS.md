@@ -46,7 +46,11 @@ rebuilt on the backend's current API:
   signal, or re-declaring the base's name, segfaults), and integer `font.pixelSize`.
 
 ## Currently working on
-Nothing in progress; U4 is committed.
+**0.4.11 (M22, 2026-09-13):** Discover splits into a Movies group and a Series group
+(All / Movies / Series chips at the top), with four new rails (trending and top rated for
+each) and a "View more" button on every rail that opens RailPage: the same list as a
+poster grid, Load more appending the next TMDB page through the rail model's
+loadMore() (needs the-den 0.6.7 for ?page=). QML harness: 14 pages including RailPage.
 
 ## Next steps
 - **See it on a real screen.** The screenshot walk uses the Basic QQC2 style offscreen;
