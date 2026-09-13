@@ -52,6 +52,16 @@ rebuilt on the backend's current API:
 finally possible. HoltOS has v0.4.16 installed in `/opt/the-den-client`; the next test build is v0.5.0a, installed
 through the HoltOS updater. See the-den's CONTEXT.txt "PICK UP HERE".
 
+**Test fixtures (2026-09-13):** `tests/fixture_backend.sh` builds a throwaway backend on 127.0.0.1:8688 with the
+data the calendar, candidates, episodes and series checks expect: movie 1 (Inception) with candidates from the-den's
+mock Torznab indexer, series 1 (Breaking Bad) with 4 episodes from its mock TVmaze, and nothing downloaded yet.
+Sign-in is always required, so it copies the users and API tokens from an already set-up database
+(`~/the-den-dev/den.db` by default) instead of creating accounts, then clears the library through the API so the
+ids start at 1. `tests/run_all.sh` is all green against it (12/12).
+
+**0.5.0a (2026-09-13):** the first lettered test build for the HoltOS updater, the same code as 0.5.0 (M33),
+tagged and pushed at e29b06a.
+
 **Session handoff note (2026-09-13):** Tier 2 (the-den's docs/feature-research.md, E1-E10) is
 finished. This client got every E-item whose surfaces column includes it; E4/E7/E8/E9/E10 skipped
 it on purpose. The E6 gap is closed in 0.4.16. See the-den's CONTEXT.txt "PICK UP HERE" section for

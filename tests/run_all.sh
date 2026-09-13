@@ -5,6 +5,10 @@
 #
 #   DEN_URL=http://127.0.0.1:8686 DEN_API_TOKEN=... tests/run_all.sh
 #
+# The calendar, candidates, episodes and series checks need seeded data (movie 1,
+# series 1 with 4 episodes, a working indexer). tests/fixture_backend.sh builds and
+# starts a backend with exactly that on 127.0.0.1:8688.
+#
 # Model tests talk to the backend directly; qml_harness.py compiles every page against
 # the real models; screenshot_app.py walks the whole app and writes a PNG per page.
 cd "$(dirname "$0")/.."
