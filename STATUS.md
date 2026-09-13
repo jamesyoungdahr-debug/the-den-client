@@ -46,6 +46,18 @@ rebuilt on the backend's current API:
   signal, or re-declaring the base's name, segfaults), and integer `font.pixelSize`.
 
 ## Currently working on
+**0.4.13 (E5, 2026-09-13):** Detail page gains a History panel (`page.item.history`, read
+straight through from the server's JSON detail payload -- no model change needed since
+`JsonRecord` already passes the raw JSON through as a `QVariantMap`), showing every
+grab/upgrade/import/failure/removal for the title with a tone-mapped badge per event
+(needs the-den's E5 history_events work). QML harness: DetailPage.qml verified clean.
+
+**0.4.12 (M23, 2026-09-13):** Manual import for unmatched downloads: a new
+ManualImportPage lists any download with leftover files (a movie/episode grab that found
+no video, a season pack with unmatched episodes, or a torrent added by hand with no title
+link), with per-file Assign (movie/episode, season picker for season packs) and
+Import-as-is actions against the server's `/downloads/unmatched` API.
+
 **0.4.11 (M22, 2026-09-13):** Discover splits into a Movies group and a Series group
 (All / Movies / Series chips at the top), with four new rails (trending and top rated for
 each) and a "View more" button on every rail that opens RailPage: the same list as a
