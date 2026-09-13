@@ -46,6 +46,12 @@ rebuilt on the backend's current API:
   signal, or re-declaring the base's name, segfaults), and integer `font.pixelSize`.
 
 ## Currently working on
+**Session handoff note (2026-09-13, evening):** work moved to Liam's HoltOS laptop, where this repo is at
+`/home/liam/Projects/theden/the-den-client`. Everything `tests/run_all.sh` needs is already installed there (PySide6
+6.11.2, Kirigami, qqc2-desktop-style and both fonts), so the harness can run natively and the real-desktop pass is
+finally possible. HoltOS has v0.4.16 installed in `/opt/the-den-client`; the next test build is v0.5.0a, installed
+through the HoltOS updater. See the-den's CONTEXT.txt "PICK UP HERE".
+
 **Session handoff note (2026-09-13):** Tier 2 (the-den's docs/feature-research.md, E1-E10) is
 finished. This client got every E-item whose surfaces column includes it; E4/E7/E8/E9/E10 skipped
 it on purpose. The E6 gap is closed in 0.4.16. See the-den's CONTEXT.txt "PICK UP HERE" section for
