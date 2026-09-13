@@ -15,6 +15,8 @@ class CandidatesModel(JsonListModel):
         ("downloadUrl", "download_url"),
         ("indexerName", "indexer_name", ""),
         ("quality", "quality", ""),
+        ("score", "score", 0),
+        ("formats", "formats", []),
         ("size", "size", 0),
         ("seeders", "seeders", 0),
         ("peers", "peers", 0),

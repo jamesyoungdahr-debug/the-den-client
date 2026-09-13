@@ -31,7 +31,7 @@ HoltPage {
         width: page.width - 2 * page.padding
         spacing: Theme.space3
 
-        PageHeader { title: page.heading; meta: page.candidatesSource.loading ? "searching your indexers…" : page.candidatesSource.count + " releases, best match first" }
+        PageHeader { title: page.heading; meta: page.candidatesSource.loading ? "searching your indexers…" : page.candidatesSource.count + " releases · best quality, then format score, then seeders" }
         StatusBanner { id: banner }
 
         Repeater {
@@ -48,6 +48,7 @@ HoltPage {
                 Meta { text: model.indexerName + " · " + (model.size ? H.bytes(model.size) + " · " : "") + model.seeders + " seeders · " + model.peers + " peers" }
                 actions: [
                     Chip { text: model.quality; enabled: false; implicitHeight: 24 },
+                    Chip { text: (model.score > 0 ? "+" : "") + model.score + (model.formats.length ? " · " + model.formats.join(", ") : ""); enabled: false; implicitHeight: 24 },
                     Badge { visible: model.isBest; tone: "available"; label: "best match" },
                     HoltButton { kind: model.isBest ? "primary" : "secondary"; small: true; text: "Grab"; onClicked: page.candidatesSource.grab(model.downloadUrl, model.title) }
                 ]
