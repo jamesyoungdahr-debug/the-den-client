@@ -60,7 +60,8 @@ Sign-in is always required, so it copies the users and API tokens from an alread
 ids start at 1. `tests/run_all.sh` is all green against it (12/12).
 
 **0.5.0a (2026-09-13):** the first lettered test build for the HoltOS updater, the same code as 0.5.0 (M33),
-tagged and pushed at e29b06a.
+tagged and pushed at e29b06a. The HoltOS updater installed it on Liam's laptop at 17:15 the same day. It still
+needs a real-desktop pass against the installed server, whose web setup isn't finished yet.
 
 **Session handoff note (2026-09-13):** Tier 2 (the-den's docs/feature-research.md, E1-E10) is
 finished. This client got every E-item whose surfaces column includes it; E4/E7/E8/E9/E10 skipped
