@@ -36,6 +36,7 @@ PAGES = {
     "DiscoverPage.qml": {},
     "SearchPage.qml": {},
     "RailPage.qml": {"railTitle": "Popular movies", "subtitle": "test"},
+    "ManualImportPage.qml": {},
     "DetailPage.qml": {"kind": "tv", "tmdbId": 95396},
     "RequestsPage.qml": {},
     "MoviesPage.qml": {},

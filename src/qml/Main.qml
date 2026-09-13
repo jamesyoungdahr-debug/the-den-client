@@ -63,6 +63,9 @@ Controls.ApplicationWindow {
     function openRail(railModel, title, subtitle) {
         push("RailPage.qml", { railModel: railModel, railTitle: title, subtitle: subtitle || "" })
     }
+    function openManualImport() {
+        push("ManualImportPage.qml")
+    }
     function search(query) {
         if (!query || !query.trim().length) return
         activeNav = "discover"

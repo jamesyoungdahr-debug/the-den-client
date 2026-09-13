@@ -81,7 +81,10 @@ HoltPage {
         width: page.width - 2 * page.padding
         spacing: Theme.space3
 
-        PageHeader { title: "Downloads"; meta: "built-in torrent client" }
+        PageHeader {
+            title: "Downloads"; meta: "built-in torrent client"
+            HoltButton { kind: "quiet"; small: true; text: "Manual import"; onClicked: Controls.ApplicationWindow.window.openManualImport() }
+        }
         StatusBanner { id: banner }
 
         GlassPanel {
