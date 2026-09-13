@@ -11,11 +11,12 @@ HoltPage {
     objectName: "candidatesPage"
     property var candidatesSource: candidatesModel
     property int itemId: 0
+    property int seasonNumber: 0  // > 0: itemId is a series id and the page lists season packs
     property string heading: ""
     title: "Releases"
     padding: Theme.space4
 
-    Component.onCompleted: candidatesSource.load(itemId)
+    Component.onCompleted: seasonNumber > 0 ? candidatesSource.loadSeason(itemId, seasonNumber) : candidatesSource.load(itemId)
 
     Connections {
         target: page.candidatesSource

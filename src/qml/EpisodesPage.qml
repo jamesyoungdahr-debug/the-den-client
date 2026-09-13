@@ -20,6 +20,7 @@ HoltPage {
     Connections {
         target: episodesModel
         function onErrorOccurred(message) { banner.showError(message) }
+        function onSeasonActionDone(seasonNumber, ok, message) { banner.show(message, ok ? "positive" : "warning") }
     }
 
     ColumnLayout {
@@ -54,7 +55,19 @@ HoltPage {
             spacing: 6
             section.property: "seasonNumber"
             section.criteria: ViewSection.FullString
-            section.delegate: Eyebrow { text: "Season " + H.pad(Number(section)); accent: false; topPadding: Theme.space3; bottomPadding: 6 }
+            section.delegate: RowLayout {
+                required property string section
+                readonly property int seasonNumber: Number(section)
+                readonly property bool monitored: episodesModel.count >= 0 && episodesModel.seasonMonitored(seasonNumber)
+                readonly property bool complete: episodesModel.count >= 0 && episodesModel.seasonComplete(seasonNumber)
+                width: ListView.view ? ListView.view.width : parent.width
+                spacing: 6
+                Eyebrow { text: "Season " + H.pad(seasonNumber); accent: false; topPadding: Theme.space3; bottomPadding: 6; Layout.fillWidth: true }
+                HoltButton { kind: "quiet"; small: true; text: monitored ? "Unmonitor" : "Monitor"; onClicked: episodesModel.monitorSeason(page.seriesId, seasonNumber, !monitored) }
+                HoltButton { visible: !complete; kind: "quiet"; small: true; text: "Season packs"; onClicked: Controls.ApplicationWindow.window.push("CandidatesPage.qml", { candidatesSource: episodeCandidatesModel, itemId: page.seriesId, seasonNumber: seasonNumber, heading: page.seriesTitle + " S" + H.pad(seasonNumber) + " (season pack)" }) }
+                HoltButton { visible: !complete; small: true; text: "Search season"; onClicked: episodesModel.searchSeason(page.seriesId, seasonNumber) }
+                HoltButton { visible: !complete; kind: "quiet"; small: true; text: "Mark as have"; onClicked: episodesModel.markSeasonHave(page.seriesId, seasonNumber) }
+            }
 
             delegate: HoltRow {
                 required property var model

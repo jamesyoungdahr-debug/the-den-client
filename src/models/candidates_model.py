@@ -31,18 +31,30 @@ class CandidatesModel(JsonListModel):
         super().__init__(api, parent)
         self._resource = resource
         self._item_id: int | None = None
+        self._season: tuple[int, int] | None = None  # (series id, season number) when loaded as a season pack
 
     currentItemId = Property(int, lambda self: self._item_id or 0, notify=itemChanged)
 
     @Slot(int)
     def load(self, itemId: int) -> None:
         self._item_id = itemId
+        self._season = None
         self.itemChanged.emit()
         self._fetch(f"/{self._resource}/{itemId}/candidates")
 
+    @Slot(int, int)
+    def loadSeason(self, seriesId: int, seasonNumber: int) -> None:
+        """Season-pack releases: GET /series/{id}/seasons/{n}/candidates; grab() then posts to .../grab."""
+        self._item_id = seriesId
+        self._season = (seriesId, seasonNumber)
+        self.itemChanged.emit()
+        self._fetch(f"/series/{seriesId}/seasons/{seasonNumber}/candidates")
+
     @Slot()
     def refresh(self) -> None:
-        if self._item_id is not None:
+        if self._season is not None:
+            self.loadSeason(*self._season)
+        elif self._item_id is not None:
             self.load(self._item_id)
 
     @Slot(str, str)
@@ -52,10 +64,12 @@ class CandidatesModel(JsonListModel):
             return
         item_id = self._item_id
 
+        path = f"/series/{self._season[0]}/seasons/{self._season[1]}/grab" if self._season is not None else f"/{self._resource}/{item_id}/grab"
+
         def on_done(status: int, body) -> None:
             if status in (200, 201):
                 self.grabFinished.emit(item_id, True, "Grabbed")
             else:
                 self.grabFinished.emit(item_id, False, self.api.error_message(status, body))
 
-        self.api.request("POST", f"/{self._resource}/{item_id}/grab", {"download_url": downloadUrl, "release_title": releaseTitle}, on_done)
+        self.api.request("POST", path, {"download_url": downloadUrl, "release_title": releaseTitle}, on_done)
