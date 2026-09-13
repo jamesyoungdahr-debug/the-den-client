@@ -46,13 +46,15 @@ rebuilt on the backend's current API:
   signal, or re-declaring the base's name, segfaults), and integer `font.pixelSize`.
 
 ## Currently working on
-**Session handoff note (2026-09-13):** working through Tier 2 (docs/feature-research.md E1-E10) in
-the-den server repo, table order, autonomously. This client (KDE) only gets E-items whose surfaces
-column includes it -- E4/E7/E8 deliberately skipped it (their own surfaces columns don't call for
-KDE). E6 (subtitles) *should* have reached KDE per its surfaces column ("settings on all surfaces")
-but doesn't yet -- a real gap, not a deliberate cut, worth closing if this is picked back up. See
-the-den's CONTEXT.txt "PICK UP HERE" section for exactly where to resume (currently: E9 research
-done, not yet implemented).
+**Session handoff note (2026-09-13):** Tier 2 (the-den's docs/feature-research.md, E1-E10) is
+finished. This client got every E-item whose surfaces column includes it; E4/E7/E8/E9/E10 skipped
+it on purpose. The E6 gap is closed in 0.4.16. See the-den's CONTEXT.txt "PICK UP HERE" section for
+what's next; the real-desktop pass on HoltOS is still open.
+
+**0.4.16 (E6, 2026-09-13):** Settings gains a Subtitles section (OpenSubtitles API key + languages).
+The key joins `SECRETS` in the settings controller, so a blank field keeps the stored value, and the
+field clears after a save like the other secrets. QML harness: SettingsPage.qml clean;
+`check_settings_controller.py` passes.
 
 **0.4.15 (E2, 2026-09-13):** Root Folders section on Settings: named library folders per
 media type (Movies vs Kids Movies, 4K vs 1080p, etc.) with a default per type, a
