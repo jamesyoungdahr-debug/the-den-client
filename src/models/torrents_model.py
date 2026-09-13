@@ -35,6 +35,7 @@ class TorrentsModel(JsonListModel):
     pollingChanged = Signal()
     addFinished = Signal(bool, str)
     statsChanged = Signal()  # own signal: a notify must belong to the declaring class, and re-declaring the base name crashes PySide
+    blocklisted = Signal(str, bool, str)  # info hash, ok, message
 
     def __init__(self, api, parent=None):
         super().__init__(api, parent)
@@ -100,6 +101,19 @@ class TorrentsModel(JsonListModel):
     @Slot(str, bool)
     def remove(self, infoHash: str, deleteFiles: bool) -> None:
         self._write("DELETE", f"/torrents/{infoHash}?delete_files={'true' if deleteFiles else 'false'}")
+
+    @Slot(str)
+    def blocklist(self, infoHash: str) -> None:
+        """Blocklist the release behind a torrent, remove it with its files, search again."""
+        def on_done(status: int, body) -> None:
+            if status == 200:
+                grabbed = bool(body.get("grabbed")) if isinstance(body, dict) else False
+                self.blocklisted.emit(infoHash, True, "Blocklisted · grabbed a new release" if grabbed else "Blocklisted · nothing else found yet")
+            else:
+                self.blocklisted.emit(infoHash, False, self.api.error_message(status, body))
+            self.refresh()
+
+        self.api.request("POST", f"/downloads/by-hash/{infoHash}/blocklist", None, on_done)
 
     @Slot(str)
     def add(self, source: str) -> None:

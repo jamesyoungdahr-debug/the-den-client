@@ -26,6 +26,7 @@ HoltPage {
         target: torrentsModel
         function onErrorOccurred(message) { banner.showError(message) }
         function onAddFinished(ok, message) { Controls.ApplicationWindow.window.toast(message, ok ? "positive" : "error"); if (!ok) banner.showError(message) }
+        function onBlocklisted(infoHash, ok, message) { Controls.ApplicationWindow.window.toast(message, ok ? "positive" : "warning") }
     }
 
     component Stat: ColumnLayout {
@@ -69,6 +70,7 @@ HoltPage {
                     Badge { tone: H.torrentBadge(model).tone; label: H.torrentBadge(model).label },
                     HoltButton { visible: model.group !== "stopped"; kind: "quiet"; small: true; text: "Pause"; onClicked: torrentsModel.pause(model.infoHash) },
                     HoltButton { visible: model.group === "stopped"; kind: "quiet"; small: true; text: "Resume"; onClicked: torrentsModel.resume(model.infoHash) },
+                    HoltButton { visible: model.group !== "seeding"; kind: "quiet"; small: true; text: "Blocklist"; onClicked: { blocklistDialog.infoHash = model.infoHash; blocklistDialog.name = model.label || model.name; blocklistDialog.open() } },
                     HoltButton { kind: "quiet"; small: true; text: "Remove"; onClicked: { removeDialog.infoHash = model.infoHash; removeDialog.name = model.label || model.name; removeDialog.open() } }
                 ]
             }
@@ -133,6 +135,18 @@ HoltPage {
             HoltButton { kind: "quiet"; text: "Cancel"; onClicked: removeDialog.close() },
             HoltButton { text: "Remove"; onClicked: { torrentsModel.remove(removeDialog.infoHash, false); removeDialog.close() } },
             HoltButton { kind: "danger"; text: "Remove + delete files"; onClicked: { torrentsModel.remove(removeDialog.infoHash, true); removeDialog.close() } }
+        ]
+    }
+
+    HoltDialog {
+        id: blocklistDialog
+        property string infoHash: ""
+        property string name: ""
+        title: "Blocklist and search again"
+        Text { text: "Remove \"" + blocklistDialog.name + "\" with its files, never grab this release again, and search for another one now?"; font.family: Theme.fontCore; font.pixelSize: 13; color: Theme.ink70; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+        footer: [
+            HoltButton { kind: "quiet"; text: "Cancel"; onClicked: blocklistDialog.close() },
+            HoltButton { kind: "danger"; text: "Blocklist"; onClicked: { torrentsModel.blocklist(blocklistDialog.infoHash); blocklistDialog.close() } }
         ]
     }
 }
