@@ -16,6 +16,7 @@ from models.manual_import_model import ManualImportModel
 from models.health_model import HealthModel
 from models.import_lists_model import ImportListsModel
 from models.indexer_model import IndexerListModel
+from models.root_folders_model import RootFoldersModel
 from models.notifications_model import NotificationAgentsModel
 from models.movie_model import MovieListModel, MovieSearchResultsModel
 from models.requests_model import RequestsModel
@@ -37,6 +38,7 @@ def build_context(api: ApiClient) -> dict:
         "healthModel": HealthModel(api),
         "notificationsModel": NotificationAgentsModel(api),
         "importListsModel": ImportListsModel(api),
+        "rootFoldersModel": RootFoldersModel(api),
         "movieModel": MovieListModel(api),
         "movieSearchModel": MovieSearchResultsModel(api),
         "candidatesModel": CandidatesModel(api, resource="movies"),

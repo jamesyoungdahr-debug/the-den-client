@@ -170,6 +170,26 @@ HoltPage {
             }
 
             Section {
+                name: "Root Folders"; note: "extra movie/TV libraries beyond the default folders above"
+                Repeater {
+                    model: rootFoldersModel
+                    delegate: HoltRow {
+                        required property var model
+                        thumbWidth: 0
+                        Text { text: model.name; font.family: Theme.fontCore; font.pixelSize: 14; font.weight: Font.Bold; color: Theme.ink; elide: Text.ElideRight; Layout.fillWidth: true }
+                        Meta { text: model.mediaType + " · " + model.path; Layout.fillWidth: true }
+                        actions: [
+                            Badge { visible: model.isDefault; tone: "available"; label: "default for " + model.mediaType },
+                            HoltButton { small: true; text: "Edit"; onClicked: rootFolderDialog.openFor(model) },
+                            HoltButton { kind: "quiet"; small: true; text: "Delete"; onClicked: rootFoldersModel.deleteFolder(model.folderId) }
+                        ]
+                    }
+                }
+                EmptyState { visible: !rootFoldersModel.loading && rootFoldersModel.count === 0; title: "No extra root folders yet"; body: "Everything uses the Movies/TV library folders above."; actionText: "Add folder"; onAction: rootFolderDialog.openFor(null) }
+                HoltButton { kind: "secondary"; small: true; text: "Add folder"; visible: rootFoldersModel.count > 0; onClicked: rootFolderDialog.openFor(null) }
+            }
+
+            Section {
                 name: "Plex"
                 note: page.s.has_plex_token ? "connected as " + (page.s.plex_owner_username || "owner") : "not connected"
                 Meta { text: page.s.has_plex_token ? ("Server: " + (page.s.plex_server_name || "not chosen") + " · last scan " + (page.s.plex_last_scan_result || "never")) : "Connect the owner account from the web Settings page; the client can then scan on the interval below."; Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone }
@@ -306,6 +326,43 @@ HoltPage {
                     if (importListDialog.listId) importListsModel.updateList(importListDialog.listId, ilNameField.text, kind, config, ilEnabledBox.checked)
                     else importListsModel.addList(ilNameField.text, kind, config, ilEnabledBox.checked)
                     importListDialog.close()
+                }
+            }
+        ]
+    }
+
+    // Root folder add/edit (E2).
+    HoltDialog {
+        id: rootFolderDialog
+        title: "Root folder"
+        property int folderId: 0
+
+        function openFor(m) {
+            folderId = m ? m.folderId : 0
+            rfNameField.text = m ? m.name : ""
+            rfMediaTypeField.currentIndex = m && m.mediaType === "tv" ? 1 : 0
+            rfPathField.text = m ? m.path : ""
+            rfDefaultBox.checked = m ? m.isDefault : false
+            open()
+        }
+
+        Field { label: "Name"; HoltTextField { id: rfNameField; placeholderText: "e.g. Kids Movies" } }
+        Field {
+            label: "Media type"
+            Controls.ComboBox { id: rfMediaTypeField; model: ["Movie", "TV"]; font.family: Theme.fontCore }
+        }
+        Field { label: "Path"; HoltTextField { id: rfPathField; placeholderText: "/path/to/library" } }
+        Controls.CheckBox { id: rfDefaultBox; text: "Default for this media type"; font.family: Theme.fontCore }
+        footer: [
+            HoltButton { kind: "quiet"; text: "Cancel"; onClicked: rootFolderDialog.close() },
+            HoltButton {
+                kind: "primary"; text: "Save"
+                enabled: rfNameField.text.length > 0 && rfPathField.text.length > 0
+                onClicked: {
+                    var mediaType = rfMediaTypeField.currentIndex === 1 ? "tv" : "movie"
+                    if (rootFolderDialog.folderId) rootFoldersModel.updateFolder(rootFolderDialog.folderId, rfNameField.text, mediaType, rfPathField.text, rfDefaultBox.checked)
+                    else rootFoldersModel.addFolder(rfNameField.text, mediaType, rfPathField.text, rfDefaultBox.checked)
+                    rootFolderDialog.close()
                 }
             }
         ]
