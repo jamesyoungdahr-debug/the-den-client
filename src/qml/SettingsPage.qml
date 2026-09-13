@@ -42,13 +42,15 @@ HoltPage {
             request_series_limit: num(seriesLimitField.text, 5),
             request_limit_days: num(limitDaysField.text, 7),
             flaresolverr_url: solverField.text,
+            opensubtitles_api_key: subtitlesKeyField.text,
+            subtitle_languages: subtitleLangsField.text,
         })
     }
 
     Connections {
         target: settingsController
         function onErrorOccurred(message) { banner.showError(message) }
-        function onSaved() { banner.show("Saved. Torrent and automation changes are live already.", "positive"); tmdbField.text = ""; discordField.text = ""; Controls.ApplicationWindow.window.toast("Settings saved", "positive") }
+        function onSaved() { banner.show("Saved. Torrent and automation changes are live already.", "positive"); tmdbField.text = ""; discordField.text = ""; subtitlesKeyField.text = ""; Controls.ApplicationWindow.window.toast("Settings saved", "positive") }
     }
 
     component Section: GlassPanel {
@@ -125,6 +127,11 @@ HoltPage {
             Section {
                 name: "Indexers"; note: "Cloudflare"
                 Field { label: "External FlareSolverr / Byparr URL"; hint: "Optional. Leave blank to use the built-in solver (needs Chromium on the server)."; HoltTextField { id: solverField; text: page.s.flaresolverr_url || ""; placeholderText: "http://127.0.0.1:8191" } }
+            }
+            Section {
+                name: "Subtitles"; note: "OpenSubtitles"
+                Field { label: "OpenSubtitles API key · " + (page.s.has_opensubtitles_api_key ? "set" : "not set"); hint: "Missing subtitles are fetched after each automation cycle."; HoltTextField { id: subtitlesKeyField; echoMode: TextInput.Password; placeholderText: "leave blank to keep the current value" } }
+                Field { label: "Languages"; hint: "Comma-separated ISO 639-1 codes, e.g. en,es."; HoltTextField { id: subtitleLangsField; text: page.s.subtitle_languages || ""; placeholderText: "en" } }
             }
             Section {
                 name: "Notifications"; note: "Discord, ntfy, webhook, Telegram, Pushover"

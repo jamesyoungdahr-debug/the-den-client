@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal, Slot
 
 from models.base import JsonRecord
 
-SECRETS = ("tmdb_api_key", "discord_webhook_url")
+SECRETS = ("tmdb_api_key", "discord_webhook_url", "opensubtitles_api_key")
 
 
 class SettingsController(JsonRecord):
