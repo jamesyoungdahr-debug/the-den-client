@@ -19,6 +19,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
 
 import json  # noqa: E402
+import tempfile  # noqa: E402
 
 from PySide6.QtCore import Q_ARG, Q_RETURN_ARG, QMetaObject, QTimer, QUrl  # noqa: E402
 from PySide6.QtGui import QGuiApplication  # noqa: E402
@@ -83,7 +84,9 @@ def main() -> int:
     problems: list[str] = []
     engine.warnings.connect(lambda ws: problems.extend(w.toString() for w in ws))
 
-    shell_path = Path(__file__).resolve().parent / "_shell.qml"
+    # Written outside the repo: the shell holds this machine's absolute QML path, which used to
+    # rewrite the tracked tests/_shell.qml on every run.
+    shell_path = Path(tempfile.gettempdir()) / "the-den-client-qml-shell.qml"
     shell_path.write_text(SHELL % {"qml": QML_DIR.as_posix()})
     engine.load(QUrl.fromLocalFile(str(shell_path)))
     if not engine.rootObjects():
