@@ -34,7 +34,7 @@ class ApiClient(QObject):
     def __init__(self, base_url: str | None = None, api_token: str | None = None, parent=None, persist: bool = True):
         super().__init__(parent)
         self._settings = QSettings("the-den", "client") if persist else None
-        self._base_url = base_url or (self._settings.value("server/baseUrl", "http://127.0.0.1:8686") if self._settings else "http://127.0.0.1:8686")
+        self._base_url = base_url or (self._settings.value("server/baseUrl", "http://127.0.0.1:40204") if self._settings else "http://127.0.0.1:40204")
         self._api_token = api_token if api_token is not None else (self._settings.value("server/apiToken", "") if self._settings else "")
         self._connected = False
         self._status_text = "Not connected"
@@ -184,16 +184,50 @@ class ApiClient(QObject):
                 self.statusTextChanged.emit()
                 self.refreshSession()
             else:
-                self._server = {}
-                self._connected = False
-                self._me = {}
-                self._status_text = "Connection failed: " + (self.error_message(status, body) if status != 200 else f"unexpected response: {body}")
-                self._set_busy(False)
-                self.connectedChanged.emit()
-                self.statusTextChanged.emit()
-                self.sessionChanged.emit()
+                moved = self._moved_url() if status == -1 else ""
+                if moved:
+                    self._probe_moved(moved, seq, status, body)
+                else:
+                    self._health_failed(status, body)
 
         self.request("GET", "/health", on_done=on_health)
+
+    def _health_failed(self, status: int, body) -> None:
+        self._server = {}
+        self._connected = False
+        self._me = {}
+        self._status_text = "Connection failed: " + (self.error_message(status, body) if status != 200 else f"unexpected response: {body}")
+        self._set_busy(False)
+        self.connectedChanged.emit()
+        self.statusTextChanged.emit()
+        self.sessionChanged.emit()
+
+    def _moved_url(self) -> str:
+        """M34 moved the server's default port from 8686 to 40204. For a saved loopback
+        address still on 8686, return the same address on 40204; otherwise ""."""
+        url = QUrl(self._base_url)
+        if url.port() == 8686 and url.host() in ("127.0.0.1", "localhost", "::1"):
+            url.setPort(40204)
+            return url.toString().rstrip("/")
+        return ""
+
+    def _probe_moved(self, moved: str, seq: int, status: int, body) -> None:
+        """The saved address failed: if the server answers on the moved address, switch to
+        it for good and connect again; otherwise report the original failure."""
+        req = QNetworkRequest(QUrl(f"{moved}/health"))
+        req.setTransferTimeout(15000)
+        reply = self._manager.get(req)
+
+        def on_probe(probe_status: int, probe_body) -> None:
+            if seq != self._request_seq:
+                return  # superseded by a newer attempt
+            if probe_status == 200 and isinstance(probe_body, dict) and probe_body.get("status") == "ok":
+                self._set_base_url(moved)
+                self.checkHealth()
+            else:
+                self._health_failed(status, body)
+
+        reply.finished.connect(lambda: self._finish(reply, on_probe))
 
     @Slot()
     def refreshSession(self) -> None:

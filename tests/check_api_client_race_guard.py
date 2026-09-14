@@ -54,7 +54,7 @@ threading.Thread(target=slow_server.serve_forever, daemon=True).start()
 threading.Thread(target=fast_server.serve_forever, daemon=True).start()
 
 app = QCoreApplication(sys.argv)
-client = ApiClient()
+client = ApiClient(persist=False)  # never overwrite the installed client's saved server address
 
 
 def step1_race() -> None:

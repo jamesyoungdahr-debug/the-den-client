@@ -48,7 +48,7 @@ HoltPage {
                     HoltTextField {
                         id: urlField
                         text: apiClient.baseUrl
-                        placeholderText: "http://den.local:8686"
+                        placeholderText: "http://den.local:40204"
                         onAccepted: { apiClient.baseUrl = text; apiClient.checkHealth() }
                     }
                 }
