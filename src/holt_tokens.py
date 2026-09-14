@@ -2,7 +2,7 @@
 
 Colours are Qt-style '#AARRGGBB' strings (alpha FIRST -- not CSS's #RRGGBBAA; this is the
 bug that tests/check_theme_colors.py in the-den-client exists to catch). Sizes are ints in px,
-durations in ms. Copied into the-den-client/src/holt_tokens.py, which theme.py reads."""
+durations in ms. Copy this file into the-den-client/src/ and have theme.py read from it."""
 
 COLOR = {
     'deep': '#FF0D0B12',
@@ -22,6 +22,9 @@ COLOR = {
     'lilac': '#FFF4EBFF',
     'healthy': '#FF28E0C8',
     'warning': '#FFFFB84D',
+    'pulse': '#FF4F7BFF',
+    'flare': '#FFFF4FD8',
+    'volt': '#FFC6FF3D',
 }
 
 GLASS = {
@@ -47,6 +50,8 @@ AMBIENT = {
     'scrim_mid': '#9E0D0B12',
     'scrim_weak': '#1F0D0B12',
     'stripe': '#3DB14DFF',
+    'glow_pulse': '#1F4F7BFF',
+    'glow_flare': '#24FF4FD8',
 }
 
 BADGE = {
