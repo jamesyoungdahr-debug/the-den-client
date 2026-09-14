@@ -10,7 +10,7 @@
 THE_DEN_REPO="${THE_DEN_REPO:-$(cd "$(dirname "$0")/../.." && pwd)/the-den}"
 SOURCE_DB="${SOURCE_DB:-$HOME/the-den-dev/den.db}"
 DEN_TOKEN_FILE="${DEN_TOKEN_FILE:-$HOME/the-den-dev/admin-token.txt}"
-FIXTURE_DIR="${FIXTURE_DIR:-$HOME/the-den-test}"
+FIXTURE_DIR="${FIXTURE_DIR:-$HOME/the-den-client-fixture}"
 PY="${PY:-$HOME/.venvs/the-den/bin/python}"
 PORT="${PORT:-8688}"
 TORRENT_PORT="${TORRENT_PORT:-6894}"
@@ -45,9 +45,22 @@ pkill -f "uvicorn tests.mock_tvmaze:app --host 127.0.0.1 --port $TVMAZE_PORT" 2>
 pkill -f "uvicorn tests.mock_torznab:app --host 127.0.0.1 --port $TORZNAB_PORT" 2>/dev/null || true
 sleep 1
 
-# Start clean
-rm -rf "$FIXTURE_DIR"
+# Refuse to run while something else answers on a port this script needs: the library
+# clean-up below would otherwise delete that server's movies, series and indexers.
+for p in "$PORT" "$TVMAZE_PORT" "$TORZNAB_PORT"; do
+    if curl -s -o /dev/null -m 2 "http://127.0.0.1:$p/"; then
+        die "port $p is already in use by another process; stop it or set a different port"
+    fi
+done
+
+# Start clean, but only ever delete a folder this script created (it leaves a marker file)
+MARKER="$FIXTURE_DIR/.the-den-client-fixture"
+if [[ -e "$FIXTURE_DIR" ]]; then
+    [[ -f "$MARKER" ]] || die "$FIXTURE_DIR exists but was not created by this script; set FIXTURE_DIR to a new folder"
+    rm -rf "$FIXTURE_DIR"
+fi
 mkdir -p "$FIXTURE_DIR/state" "$FIXTURE_DIR/downloads" "$FIXTURE_DIR/movies" "$FIXTURE_DIR/tv" "$FIXTURE_DIR/swarm"
+touch "$MARKER"
 
 # Copy the database consistently even while its server runs
 sqlite3 "$SOURCE_DB" ".backup '$FIXTURE_DIR/den.db'"

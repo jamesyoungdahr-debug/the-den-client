@@ -1,4 +1,4 @@
-"""Headless check for ApiClient's M34 port fallback: a saved loopback address on the old
+"""Headless check for ApiClient's M34 port fallback: a saved address on the old
 port 8686 that no longer answers is retried on 40204, and switched to only if the server
 answers there. Uses [::1] so the HoltOS-installed server on 127.0.0.1:8686 can't answer.
 Run from the repo root: `QT_QPA_PLATFORM=offscreen python3 tests/check_api_client_port_fallback.py`
@@ -47,12 +47,12 @@ server = None
 
 
 def check_moved_url() -> None:
-    print("-- _moved_url only rewrites loopback addresses on 8686 --")
+    print("-- _moved_url rewrites any address on 8686 to the same host on 40204 --")
     cases = {
         "http://127.0.0.1:8686": "http://127.0.0.1:40204",
         "http://localhost:8686": "http://localhost:40204",
         OLD_URL: NEW_URL,
-        "http://192.168.0.236:8686": "",
+        "http://192.168.0.236:8686": "http://192.168.0.236:40204",
         "http://127.0.0.1:8687": "",
         "http://127.0.0.1:40204": "",
     }

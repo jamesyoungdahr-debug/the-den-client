@@ -203,10 +203,11 @@ class ApiClient(QObject):
         self.sessionChanged.emit()
 
     def _moved_url(self) -> str:
-        """M34 moved the server's default port from 8686 to 40204. For a saved loopback
-        address still on 8686, return the same address on 40204; otherwise ""."""
+        """M34 moved the server's default port from 8686 to 40204. For a saved address still on
+        8686, return the same host on 40204; otherwise "". Only tried after a network failure,
+        and the probe sends no token."""
         url = QUrl(self._base_url)
-        if url.port() == 8686 and url.host() in ("127.0.0.1", "localhost", "::1"):
+        if url.port() == 8686 and url.host():
             url.setPort(40204)
             return url.toString().rstrip("/")
         return ""
