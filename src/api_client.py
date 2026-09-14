@@ -12,6 +12,7 @@ the server answers nothing but /health until its web setup is finished (M33)."""
 from __future__ import annotations
 
 import json
+import socket
 from typing import Callable
 
 from PySide6.QtCore import Property, QObject, QSettings, QTimer, QUrl, Signal, Slot
@@ -270,7 +271,8 @@ class ApiClient(QObject):
                 self._set_busy(False)
                 self.loginFailed.emit("Signed in, but couldn't get an API token: " + self.error_message(status, body))
 
-        self.request("POST", "/api/auth/token", on_done=on_token)
+        # Each sign-in is its own device on the server (M37), named after this computer.
+        self.request("POST", "/api/auth/token", {"name": socket.gethostname() or "KDE desktop", "platform": "kde"}, on_done=on_token)
 
     @Slot()
     def startPlexLogin(self) -> None:
