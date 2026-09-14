@@ -1,5 +1,9 @@
 # Status
 
+## Next (handoff from HoltOS, 2026-09-14)
+
+**Match the HoltOS glass windows.** Liam wants the client to look like the HoltOS glass windows: a real translucent window blurred by KWin, one even tint, translucent purple selection. The brief, with the reference screenshot and proposed `desktopGlass` tokens, is `docs/holtos-glass-desktop-handoff.md` in the-den repo. Not started.
+
 ## Last completed
 
 **0.5.0b (2026-09-14): port 40204.** M34 moved the-den's default port from 8686 to 40204. The default server address is now `http://127.0.0.1:40204` and the login placeholder `http://den.local:40204`. A saved loopback address still on 8686 that stops answering is retried on 40204 and replaced if the server answers there (`ApiClient._moved_url` and `_probe_moved`), so the installed client follows the server when the-den v0.8.1a moves it; other addresses are left alone. New `tests/check_api_client_port_fallback.py`. `tests/check_api_client_race_guard.py` no longer overwrites the installed client's saved server address (it used to save settings). Verified: `tests/run_all.sh` 13/13 against the fixture backend on 8688. Installed by the HoltOS updater on 2026-09-14 at 13:27; the installed client moved its saved address from `:8686` to `:40204` and connected to the-den v0.8.1a.
