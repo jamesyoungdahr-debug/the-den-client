@@ -7,7 +7,12 @@ keeps only that (in QSettings), sending it as X-Api-Key from then on -- no passw
 stored. "Sign in with Plex" uses the backend's PIN flow: POST /api/auth/plex/pin gives a
 code and a plex.tv URL to open in the system browser; the client polls POST /api/auth/plex
 until plex.tv reports the PIN claimed (202 while waiting). Sign-in is always required, and
-the server answers nothing but /health until its web setup is finished (M33)."""
+the server answers nothing but /health until its web setup is finished (M33).
+
+HTTPS (M40): a server that listens on the LAN serves HTTPS with a self-signed certificate.
+The first connection shows the key's pin and asks the person to trust it; after that only
+that key is accepted (see tls_pins.py). The addresses a trusted server announces over a
+pinned connection are remembered, so the app can switch between the LAN and public address."""
 
 from __future__ import annotations
 
@@ -17,10 +22,26 @@ from typing import Callable
 
 from PySide6.QtCore import Property, QObject, QSettings, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest, QSslError
+
+try:
+    from tls_pins import PinStore, authority_of, is_loopback_host, pin_for_der
+except ImportError:  # imported as part of a package
+    from .tls_pins import PinStore, authority_of, is_loopback_host, pin_for_der
 
 JSON = "application/json"
 Callback = Callable[[int, object], None]  # (http status or -1, parsed body or error string)
+
+# TLS errors a pinned self-signed certificate may have. Anything else (expired, not yet valid,
+# revoked, a bad signature) fails the connection even when the key matches the pin (M40).
+PINNABLE_SSL_ERRORS = frozenset({
+    QSslError.SslError.SelfSignedCertificate,
+    QSslError.SslError.SelfSignedCertificateInChain,
+    QSslError.SslError.HostNameMismatch,
+    QSslError.SslError.UnableToGetLocalIssuerCertificate,
+    QSslError.SslError.UnableToVerifyFirstCertificate,
+    QSslError.SslError.CertificateUntrusted,
+})
 
 
 class ApiClient(QObject):
@@ -30,9 +51,11 @@ class ApiClient(QObject):
     sessionChanged = Signal()
     busyChanged = Signal()
     plexPinChanged = Signal()
+    pinPromptChanged = Signal()
     loginFailed = Signal(str)
 
-    def __init__(self, base_url: str | None = None, api_token: str | None = None, parent=None, persist: bool = True):
+    def __init__(self, base_url: str | None = None, api_token: str | None = None, parent=None, persist: bool = True,
+                 pins: PinStore | None = None):
         super().__init__(parent)
         self._settings = QSettings("the-den", "client") if persist else None
         self._base_url = base_url or (self._settings.value("server/baseUrl", "http://127.0.0.1:40204") if self._settings else "http://127.0.0.1:40204")
@@ -46,7 +69,13 @@ class ApiClient(QObject):
         self._plex_timer = QTimer(self)
         self._plex_timer.setInterval(2500)
         self._plex_timer.timeout.connect(self._poll_plex)
+        self._pins = pins if pins is not None else PinStore(self._settings)
+        self._pending: dict = {}  # {"pin", "authority", "url"}: a certificate waiting for the person to trust it
+        self._pin_problem = ""
+        self._conflict_server_id = ""
         self._manager = QNetworkAccessManager(self)
+        self._manager.sslErrors.connect(self._on_ssl_errors)
+        self._manager.encrypted.connect(self._on_encrypted)
         self._request_seq = 0
 
     # ---- properties ----------------------------------------------------------------
@@ -93,6 +122,11 @@ class ApiClient(QObject):
     plexCode = Property(str, lambda self: self._plex_pin.get("code", ""), notify=plexPinChanged)
     plexAuthUrl = Property(str, lambda self: self._plex_pin.get("auth_url", ""), notify=plexPinChanged)
     plexWaiting = Property(bool, lambda self: self._plex_timer.isActive(), notify=plexPinChanged)
+
+    # Certificate trust (M40): a server key waiting for the person to trust it, or why a connection was refused
+    pendingPin = Property(str, lambda self: self._pending.get("pin", ""), notify=pinPromptChanged)
+    pendingServer = Property(str, lambda self: self._pending.get("authority", ""), notify=pinPromptChanged)
+    pinProblem = Property(str, lambda self: self._pin_problem, notify=pinPromptChanged)
 
     # ---- HTTP helper -----------------------------------------------------------------
 
@@ -153,6 +187,151 @@ class ApiClient(QObject):
             self._busy = value
             self.busyChanged.emit()
 
+    # ---- certificate pinning (M40) -----------------------------------------------------
+
+    def _on_ssl_errors(self, reply: QNetworkReply, errors: list) -> None:
+        """A certificate the system doesn't trust (the server's self-signed one) is accepted only when
+        its key matches the pin stored for this address, or the pin of the trusted server that
+        announced this address, and its only problems are ones a pinned self-signed certificate
+        has. A key this app hasn't seen waits for the person to trust it."""
+        authority = authority_of(reply.url())
+        try:
+            pin = pin_for_der(bytes(reply.sslConfiguration().peerCertificate().toDer()))
+        except Exception:
+            self._set_pin_problem(f"{authority} sent a certificate this app couldn't read.")
+            return
+        unusable = sorted({e.errorString() for e in errors if e.error() not in PINNABLE_SSL_ERRORS})
+        if unusable:
+            self._set_pin_problem(f"{authority}'s certificate can't be used: {'; '.join(unusable)}.")
+            return
+        stored = self._pins.for_address(authority)
+        if stored:
+            if stored == pin:
+                reply.ignoreSslErrors(errors)
+            else:
+                self._set_pin_problem(
+                    f"The certificate key at {authority} isn't the one you trusted, so the connection was refused. "
+                    "If the server's key really changed, forget the old key and connect again."
+                )
+            return
+        announced = self._pins.known_pin_for_authority(authority)
+        if announced:
+            if announced == pin:
+                self._pins.trust_address(authority, pin)
+                reply.ignoreSslErrors(errors)
+            else:
+                self._set_pin_problem(
+                    f"The certificate key at {authority} isn't the key of the server that announced this address, "
+                    "so the connection was refused."
+                )
+            return
+        if not self._pending:
+            self._pending = {"pin": pin, "authority": authority, "url": f"https://{authority}"}
+            self.pinPromptChanged.emit()
+
+    def _on_encrypted(self, reply: QNetworkReply) -> None:
+        """After every TLS handshake: once a pin is stored for an address, only that key is accepted,
+        even when the system itself trusts the certificate."""
+        authority = authority_of(reply.url())
+        stored = self._pins.for_address(authority)
+        if not stored:
+            return
+        try:
+            pin = pin_for_der(bytes(reply.sslConfiguration().peerCertificate().toDer()))
+        except Exception:
+            pin = ""
+        if pin != stored:
+            reply.abort()
+            self._set_pin_problem(f"The certificate key at {authority} isn't the one you trusted, so the connection was refused.")
+
+    def _set_pin_problem(self, message: str) -> None:
+        if message != self._pin_problem:
+            self._pin_problem = message
+            self.pinPromptChanged.emit()
+
+    def _server_pin_problem(self, body: dict) -> str:
+        """After /health answered over HTTPS: the key this connection used must be the key the server
+        reports, and a server id seen before must still use the same key. Returns why not, or ""."""
+        authority = authority_of(QUrl(self._base_url))
+        used = self._pins.for_address(authority)
+        if not used:
+            return ""  # a certificate the system trusts; nothing is pinned for this address
+        reported = str(body.get("tls_pin") or "")
+        if reported and reported != used:
+            return (f"{authority} reports a different certificate key than the one this connection used, so something "
+                    "may be intercepting the connection. Refusing to connect.")
+        server_id = str(body.get("server_id") or "")
+        known = self._pins.for_server(server_id)
+        if known and known != used:
+            self._conflict_server_id = server_id
+            name = body.get("server_name") or server_id
+            return f"{name} used a different certificate key before. Refusing to connect; forget the old key if the server really changed."
+        if server_id and not known:
+            self._pins.remember_server(server_id, used)
+        return ""
+
+    def _remember_server(self, body: dict) -> None:
+        """After a pinned HTTPS connect: remember this address and the public address the server
+        announces, so a failed connection can try the other one."""
+        base = QUrl(self._base_url)
+        server_id = str(body.get("server_id") or "")
+        if base.scheme() != "https" or not self._pins.for_server(server_id):
+            return
+        port = base.port(443)
+        public_host = str(body.get("public_host") or "").strip().lower().rstrip(".")
+        if public_host:
+            public_url = f"https://[{public_host}]:{port}" if ":" in public_host else f"https://{public_host}:{port}"
+        else:
+            public_url = ""
+        on_public = bool(public_host) and base.host().lower() == public_host
+        self._pins.remember_addresses(server_id, str(body.get("server_name") or ""),
+                                      lan_url="" if on_public else self._base_url, public_url=public_url)
+
+    def _other_remembered_url(self) -> str:
+        """The other address remembered for the server behind the current address, or ""."""
+        authority = authority_of(QUrl(self._base_url))
+        for server_id in self._pins.server_ids():
+            remembered = self._pins.addresses(server_id)
+            lan, public = remembered["lanUrl"], remembered["publicUrl"]
+            if lan and public and authority_of(QUrl(lan)) == authority:
+                return public
+            if lan and public and authority_of(QUrl(public)) == authority:
+                return lan
+        return ""
+
+    @Slot()
+    def trustPendingPin(self) -> None:
+        """The person compared the pin with Settings > Remote access on the server and trusts it."""
+        pending = self._pending
+        if not pending:
+            return
+        self._pins.trust_address(pending["authority"], pending["pin"])
+        self._pending = {}
+        self.pinPromptChanged.emit()
+        base = QUrl(self._base_url)
+        if base.scheme() != "https" or authority_of(base) != pending["authority"]:
+            self._set_base_url(pending["url"])
+        self.checkHealth()
+
+    @Slot()
+    def rejectPendingPin(self) -> None:
+        if not self._pending:
+            return
+        self._pending = {}
+        self.pinPromptChanged.emit()
+        self._status_text = "Not connected: the server's certificate wasn't trusted."
+        self.statusTextChanged.emit()
+
+    @Slot()
+    def forgetPin(self) -> None:
+        """Forget the trusted key for the current server address (and a server id that was refused for
+        a key change), so the next connection asks again."""
+        self._pins.forget(authority_of(QUrl(self._base_url)))
+        if self._conflict_server_id:
+            self._pins.forget_server(self._conflict_server_id)
+            self._conflict_server_id = ""
+        self._set_pin_problem("")
+
     # ---- connect / session -------------------------------------------------------------
 
     @Slot()
@@ -164,6 +343,10 @@ class ApiClient(QObject):
         self._request_seq += 1
         seq = self._request_seq
         self._set_busy(True)
+        if self._pending or self._pin_problem:
+            self._pending = {}
+            self._pin_problem = ""
+            self.pinPromptChanged.emit()
 
         def on_health(status: int, body) -> None:
             if seq != self._request_seq:
@@ -178,20 +361,43 @@ class ApiClient(QObject):
                 self.statusTextChanged.emit()
                 self.sessionChanged.emit()
             elif status == 200 and isinstance(body, dict) and body.get("status") == "ok":
+                problem = self._server_pin_problem(body) if QUrl(self._base_url).scheme() == "https" else ""
+                if problem:
+                    self._set_pin_problem(problem)
+                    self._health_failed(-1, problem)
+                    return
+                self._remember_server(body)
                 self._server = body
                 self._connected = True
                 self._status_text = "Connected"
                 self.connectedChanged.emit()
                 self.statusTextChanged.emit()
                 self.refreshSession()
+            elif status == -1 and (self._pending or self._pin_problem):
+                self._certificate_stop(status, body)
             else:
-                moved = self._moved_url() if status == -1 else ""
-                if moved:
-                    self._probe_moved(moved, seq, status, body)
+                alternatives = self._fallback_urls() if status == -1 else []
+                if alternatives:
+                    self._probe_alternatives(alternatives, seq, status, body)
                 else:
                     self._health_failed(status, body)
 
         self.request("GET", "/health", on_done=on_health)
+
+    def _certificate_stop(self, status: int, body) -> None:
+        """A certificate stopped the connection: ask the person to trust a new key, or say why it was refused."""
+        if not self._pending:
+            self._health_failed(-1, self._pin_problem or self.error_message(status, body))
+            return
+        self._server = {}
+        self._connected = False
+        self._me = {}
+        self._status_text = (f"{self._pending['authority']} has a certificate this app hasn't seen before. "
+                             "Compare its pin with Settings > Remote access on the server, then trust it.")
+        self._set_busy(False)
+        self.connectedChanged.emit()
+        self.statusTextChanged.emit()
+        self.sessionChanged.emit()
 
     def _health_failed(self, status: int, body) -> None:
         self._server = {}
@@ -213,10 +419,36 @@ class ApiClient(QObject):
             return url.toString().rstrip("/")
         return ""
 
-    def _probe_moved(self, moved: str, seq: int, status: int, body) -> None:
-        """The saved address failed: if the server answers on the moved address, switch to
-        it for good and connect again; otherwise report the original failure."""
-        req = QNetworkRequest(QUrl(f"{moved}/health"))
+    @staticmethod
+    def _https_of(base: str) -> str:
+        """The same address over HTTPS, for an http address that isn't this machine; otherwise ""."""
+        url = QUrl(base)
+        if url.scheme() != "http" or not url.host() or is_loopback_host(url.host()):
+            return ""
+        if url.port() == -1:
+            url.setPort(80)  # keep the port that was typed, even the default one
+        url.setScheme("https")
+        return url.toString().rstrip("/")
+
+    def _fallback_urls(self) -> list[str]:
+        """Addresses to try after a network failure, in order: the same address over HTTPS (a server
+        listening on the LAN serves HTTPS only since 0.8.1c), the other address remembered for this
+        server (LAN or public), the port moved from 8686, and that moved address over HTTPS."""
+        moved = self._moved_url()
+        candidates = (self._https_of(self._base_url), self._other_remembered_url(), moved,
+                      self._https_of(moved) if moved else "")
+        out: list[str] = []
+        for candidate in candidates:
+            if candidate and candidate != self._base_url and candidate not in out:
+                out.append(candidate)
+        return out
+
+    def _probe_alternatives(self, urls: list[str], seq: int, status: int, body) -> None:
+        """The saved address failed. Probe each alternative's /health (without the token) and switch
+        for good to the first that answers. A certificate this app hasn't seen stops the search and
+        asks the person to trust it; if nothing answers, report the original failure."""
+        candidate, rest = urls[0], urls[1:]
+        req = QNetworkRequest(QUrl(f"{candidate}/health"))
         req.setTransferTimeout(15000)
         reply = self._manager.get(req)
 
@@ -224,8 +456,12 @@ class ApiClient(QObject):
             if seq != self._request_seq:
                 return  # superseded by a newer attempt
             if probe_status == 200 and isinstance(probe_body, dict) and probe_body.get("status") == "ok":
-                self._set_base_url(moved)
+                self._set_base_url(candidate)
                 self.checkHealth()
+            elif probe_status == -1 and (self._pending or self._pin_problem):
+                self._certificate_stop(status, body)
+            elif rest:
+                self._probe_alternatives(rest, seq, status, body)
             else:
                 self._health_failed(status, body)
 

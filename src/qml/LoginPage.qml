@@ -12,6 +12,9 @@ HoltPage {
     title: "Sign in"
     padding: 0
 
+    Component.onCompleted: discoveredServers.start()
+    Component.onDestruction: discoveredServers.stop()
+
     Connections {
         target: apiClient
         function onLoginFailed(message) { banner.showError(message) }
@@ -43,6 +46,40 @@ HoltPage {
 
                 StatusBanner { id: banner }
 
+                // ---- servers on this network ----
+                ColumnLayout {
+                    visible: discoveredServers.count > 0 || !discoveredServers.available
+                    Layout.fillWidth: true
+                    spacing: Theme.space2
+
+                    Eyebrow { text: "Servers on this network"; accent: false }
+
+                    Loader {
+                        active: discoveredServers.available && discoveredServers.count > 0
+                        Layout.fillWidth: true
+                        sourceComponent: ColumnLayout {
+                            width: parent.width
+                            spacing: 4
+                            Repeater {
+                                model: discoveredServers
+                                HoltButton {
+                                    kind: "secondary"
+                                    text: model.name + "  ·  " + model.url
+                                    onClicked: { urlField.text = model.url; apiClient.baseUrl = model.url; apiClient.checkHealth() }
+                                }
+                            }
+                        }
+                    }
+
+                    Meta {
+                        visible: !discoveredServers.available
+                        text: "LAN discovery isn't available on this computer (python-zeroconf is missing)."
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideNone
+                    }
+                }
+
                 Field {
                     label: "Server"
                     HoltTextField {
@@ -62,6 +99,54 @@ HoltPage {
                     Item { Layout.fillWidth: true }
                 }
                 Meta { visible: !apiClient.connected && apiClient.statusText !== "Not connected"; text: apiClient.statusText; Layout.fillWidth: true; wrapMode: Text.WordWrap; elide: Text.ElideNone }
+
+                // ---- trust panel (new server certificate) ----
+                ColumnLayout {
+                    visible: apiClient.pendingPin !== ""
+                    Layout.fillWidth: true
+                    spacing: Theme.space2
+
+                    Eyebrow { text: "New server certificate"; accent: false }
+
+                    Meta {
+                        text: "Compare this pin with Settings > Remote access on " + apiClient.pendingServer + ". Trust it only if they match."
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideNone
+                    }
+
+                    TextEdit {
+                        text: apiClient.pendingPin
+                        font.family: "JetBrains Mono"
+                        wrapMode: Text.WrapAnywhere
+                        readOnly: true
+                        selectByMouse: true
+                        Layout.fillWidth: true
+                        color: Theme.ink
+                    }
+
+                    RowLayout {
+                        spacing: 8
+                        HoltButton { kind: "primary"; text: "Trust this server"; onClicked: apiClient.trustPendingPin() }
+                        HoltButton { kind: "secondary"; text: "Cancel"; onClicked: apiClient.rejectPendingPin() }
+                    }
+                }
+
+                // ---- refusal panel (pin problem) ----
+                ColumnLayout {
+                    visible: apiClient.pinProblem !== ""
+                    Layout.fillWidth: true
+                    spacing: Theme.space2
+
+                    Meta {
+                        text: apiClient.pinProblem
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideNone
+                    }
+
+                    HoltButton { kind: "secondary"; text: "Forget the saved key"; onClicked: apiClient.forgetPin() }
+                }
 
                 // ---- sign-in, once connected ----
                 ColumnLayout {

@@ -3,13 +3,13 @@
 # Builds from this checkout directly (no VCS/network source fetch) — run
 # `makepkg -si` from the repo root.
 pkgname=the-den-client
-pkgver=0.5.0c
+pkgver=0.5.0d
 pkgrel=1
 pkgdesc="Native KDE desktop companion app for The Den — talks to its JSON API instead of a browser"
 arch=('any')
 url="https://github.com/jamesyoungdahr-debug/the-den-client"
 license=('unknown')
-depends=('python' 'pyside6' 'kirigami' 'qqc2-desktop-style' 'qt6-declarative' 'ttf-nunito' 'ttf-jetbrains-mono')
+depends=('python' 'pyside6' 'python-cryptography' 'python-zeroconf' 'kirigami' 'qqc2-desktop-style' 'qt6-declarative' 'ttf-nunito' 'ttf-jetbrains-mono')
 
 package() {
     # This PKGBUILD has no source array, so $startdir is the repo checkout itself.

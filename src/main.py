@@ -23,6 +23,7 @@ from models.requests_model import RequestsModel
 from models.series_model import SeriesListModel, SeriesSearchResultsModel
 from models.settings_controller import SettingsController
 from models.torrents_model import TorrentsModel
+from models.discovery_model import DiscoveredServersModel
 from theme import Theme
 
 RAILS = ("trending", "trending-movies", "popular-movies", "upcoming-movies", "top-rated-movies", "trending-tv", "popular-tv", "on-the-air", "top-rated-tv", "recommended")
@@ -54,6 +55,7 @@ def build_context(api: ApiClient) -> dict:
         "discoverSearchModel": DiscoverSearchModel(api),
         "detailController": DetailController(api),
         "requestsModel": RequestsModel(api),
+        "discoveredServers": DiscoveredServersModel(),
     }
     for rail in RAILS:
         # trending -> trendingRail, popular-movies -> popularMoviesRail

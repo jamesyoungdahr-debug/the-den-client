@@ -42,6 +42,20 @@ local account; the client swaps the session for a personal API token and keeps o
 that, in `QSettings`, sent as `X-Api-Key`. While sign-in is optional on the server, an
 anonymous connection is an admin and everything works without an account.
 
+## Connecting to a server over HTTPS
+
+Since server 0.8.1c, a server that listens on the network (not just on its own machine) serves HTTPS only, with a
+self-signed certificate. The first time the client reaches such a server it shows the certificate's pin and asks you
+to trust it: compare the pin with Settings > Remote access in the server's web UI, and trust it only if they match.
+After that the client accepts only that key for that server. If the key ever changes, the client refuses to connect
+until you choose "Forget the saved key". An `http://` address for a server on your network is retried over HTTPS
+automatically.
+
+The login page also lists The Den servers it finds on your network (mDNS, `_theden._tcp`). Picking one fills in its
+address, and its pin is still checked the same way. The client remembers a trusted server's LAN address and the
+public address the server announces, and tries the other one when the saved address doesn't answer. Discovery needs
+`python-zeroconf` and pinning needs `python-cryptography`; both are dependencies in the PKGBUILD.
+
 ## Layout
 
 - `src/api_client.py` -- the one connection: base URL, token, sign-in (local + Plex PIN),
