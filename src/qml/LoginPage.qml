@@ -33,7 +33,7 @@ HoltPage {
 
                 RowLayout {
                     spacing: 12
-                    RingMark { markSize: 34 }
+                    OtterMark { markSize: 44 }
                     ColumnLayout {
                         spacing: 0
                         Text { text: "The Den"; font.family: Theme.fontCore; font.weight: Font.Black; font.pixelSize: 26; font.letterSpacing: -1; color: Theme.ink }

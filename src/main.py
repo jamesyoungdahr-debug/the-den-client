@@ -76,7 +76,7 @@ def main() -> None:
     # Theme icon (hicolor, installed by the package) with the bundled file as fallback;
     # Qt 6.8+ / KWin 6.2+ also pass a file icon via xdg-toplevel-icon. The file lives inside
     # src/ because the HoltOS updater installs only src/.
-    logo = Path(__file__).resolve().parent / "assets" / "logo.svg"
+    logo = Path(__file__).resolve().parent / "assets" / "the-den-client.png"
     icon = QIcon.fromTheme("the-den-client", QIcon(str(logo))) if logo.exists() else QIcon.fromTheme("the-den-client")
     app.setWindowIcon(icon)
 

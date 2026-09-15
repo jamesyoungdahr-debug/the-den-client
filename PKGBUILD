@@ -21,7 +21,7 @@ package() {
 
     install -Dm755 "$startdir/deploy/the-den-client" "$pkgdir/usr/bin/the-den-client"
     install -Dm644 "$startdir/deploy/the-den-client.desktop" "$pkgdir/usr/share/applications/the-den-client.desktop"
-    install -Dm644 "$startdir/src/assets/logo.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/the-den-client.svg"
-    install -Dm644 "$startdir/src/assets/logo.svg" "$pkgdir/usr/share/icons/hicolor/64x64/apps/the-den-client.svg"
-    install -Dm644 "$startdir/src/assets/logo.svg" "$pkgdir/usr/share/pixmaps/the-den-client.svg"
+    # App icon: the HoltOS otter (ComfyUI render), 256 px.
+    install -Dm644 "$startdir/src/assets/the-den-client.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/the-den-client.png"
+    install -Dm644 "$startdir/src/assets/the-den-client.png" "$pkgdir/usr/share/pixmaps/the-den-client.png"
 }
